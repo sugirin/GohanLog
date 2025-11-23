@@ -13,7 +13,7 @@ export default defineConfig({
         enabled: true
       },
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'GohanLog',
         short_name: 'GohanLog',
