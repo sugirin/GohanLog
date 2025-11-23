@@ -1,11 +1,14 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { format } from "date-fns"
-import { Search, Users, X, MapPin } from "lucide-react"
+import { Search, Users, X, MapPin, Edit2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { db } from "@/lib/db"
+import { Button } from "@/components/ui/button"
+import { db, type Log } from "@/lib/db"
+import { updateLog } from "@/lib/actions"
+import { LogForm } from "./LogForm"
 
 export function HistoryScreen() {
     const [searchQuery, setSearchQuery] = React.useState("")
@@ -37,24 +40,25 @@ export function HistoryScreen() {
     }, [searchQuery, activePerson, activePlace]) || []
 
     const [selectedPhoto, setSelectedPhoto] = React.useState<Blob | null>(null)
+    const [editingLog, setEditingLog] = React.useState<Log | null>(null)
 
     return (
 
         <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in duration-500">
             <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
                 <div className="space-y-2">
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 border rounded-md px-3 bg-background">
+                        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                         <Input
                             placeholder="Search place or people..."
-                            className="pl-8"
+                            className="border-0 focus-visible:ring-0 px-0 h-9"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                                className="text-muted-foreground hover:text-foreground shrink-0"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -112,6 +116,14 @@ export function HistoryScreen() {
                                             >
                                                 {log.place}
                                             </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 -mr-2 -mt-1 text-muted-foreground hover:text-foreground"
+                                                onClick={() => setEditingLog(log)}
+                                            >
+                                                <Edit2 className="h-3 w-3" />
+                                            </Button>
                                         </div>
                                         <span className="text-sm text-muted-foreground block">
                                             {format(new Date(log.date), 'MMM d, yyyy')}
@@ -176,6 +188,31 @@ export function HistoryScreen() {
                             onClick={(e) => e.stopPropagation()}
                         />
                     )}
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editingLog && (
+                <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-background border rounded-lg shadow-lg w-full max-w-lg h-[90vh] flex flex-col overflow-hidden">
+                        <div className="p-4 border-b flex items-center justify-between shrink-0">
+                            <h2 className="text-lg font-semibold">Edit Memory</h2>
+                            <Button variant="ghost" size="icon" onClick={() => setEditingLog(null)}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="flex-1 overflow-hidden p-4">
+                            <LogForm
+                                initialData={editingLog}
+                                submitLabel="Update Memory"
+                                onCancel={() => setEditingLog(null)}
+                                onSave={async (data) => {
+                                    await updateLog(editingLog.id!, data)
+                                    setEditingLog(null)
+                                }}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

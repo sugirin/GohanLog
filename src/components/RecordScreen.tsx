@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users } from "lucide-react"
+import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
@@ -49,6 +49,11 @@ export function RecordScreen() {
                 e.target.value = ''
             }
         }
+    }
+
+    const handleRemovePhoto = (index: number) => {
+        setPhotos(prev => prev.filter((_, i) => i !== index))
+        setThumbnails(prev => prev.filter((_, i) => i !== index))
     }
 
     const handleSubmit = async () => {
@@ -235,8 +240,14 @@ export function RecordScreen() {
                         {(thumbnails.length > 0 || isProcessingPhotos) && (
                             <div className="flex gap-2 overflow-x-auto pb-2 h-20 items-center">
                                 {thumbnails.map((thumb, i) => (
-                                    <div key={i} className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border shadow-sm">
+                                    <div key={i} className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border shadow-sm group">
                                         <img src={URL.createObjectURL(thumb)} alt="preview" className="object-cover w-full h-full" />
+                                        <button
+                                            onClick={() => handleRemovePhoto(i)}
+                                            className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
                                     </div>
                                 ))}
                                 {isProcessingPhotos && (

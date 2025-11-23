@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/GohanLog/dev-sw.js?dev-sw', { scope: '/GohanLog/', type: 'classic' })
