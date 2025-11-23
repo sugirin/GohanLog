@@ -48,7 +48,7 @@ export async function updateLog(id: number, newLog: Log) {
         if (!oldLog) throw new Error(`Log with id ${id} not found`)
 
         // Update log
-        await db.logs.update(id, newLog)
+        await db.logs.update(id, { ...newLog })
 
         // Update place tags
         if (oldLog.place !== newLog.place) {

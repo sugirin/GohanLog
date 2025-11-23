@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { useTags } from "@/lib/actions"
 import { TagInput } from "./TagInput"
 import { processImage } from "@/lib/imageUtils"
-import { Log } from "@/lib/db"
+import type { Log } from "@/lib/db"
 
 interface LogFormProps {
     initialData?: Log

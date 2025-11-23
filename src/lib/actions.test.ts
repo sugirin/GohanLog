@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db } from './db';
-import { updateLog, saveLog } from './actions';
+import { updateLog } from './actions';
 import "fake-indexeddb/auto";
 
 describe('updateLog', () => {
