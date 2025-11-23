@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# GohanLog 🍚
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**[アプリを開く (https://sugirin.github.io/GohanLog/)](https://sugirin.github.io/GohanLog/)**
 
-Currently, two official plugins are available:
+「シンプル・軽量・オフライン」をコンセプトにした、自分だけの食事記録アプリ。
+iPhoneのホーム画面に追加して、ネイティブアプリのようにサクサク使えます。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## コンセプト
 
-## React Compiler
+- **自分だけの記録**: データは全て端末内に保存され、誰にも見られません。
+- **超高速**: 起動から記録完了まで5秒。通信待ちもありません。
+- **振り返り**: 「あの人とどこ行ったっけ？」「この店いつ行ったっけ？」がすぐに見つかります。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 主な機能
 
-## Expanding the ESLint configuration
+### 1. 記録する (Record)
+- **スマート入力**: よく行く店や一緒に行く人を自動でタグ化。ワンタップで入力できます。
+- **写真**: カメラ起動もアルバム選択もワンタップ。保存時に自動で軽量化されます。
+- **オフライン**: 電波がない地下のお店でも問題なく記録できます。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 2. 振り返る (History)
+- **リスト表示**: 写真サムネイル付きで見やすく一覧表示。
+- **検索・フィルタ**: 店名や人名で瞬時に検索。
+- **プレビュー**: 写真をタップすると高画質で拡大表示。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 使い方 (iPhone)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+このアプリはPWA (Progressive Web App) です。以下の手順でインストールしてください。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. SafariでアプリのURLを開く。 **[アプリを開く (https://sugirin.github.io/GohanLog/)](https://sugirin.github.io/GohanLog/)**
+2. 画面下部の「共有ボタン（四角から矢印が出ているアイコン）」をタップ。
+3. **「ホーム画面に追加」** を選択。
+4. ホーム画面に追加されたアイコンから起動する。
+
+## 開発者向け情報
+
+### 技術スタック
+- Vite + React + TypeScript
+- Tailwind CSS (v4)
+- Dexie.js (IndexedDB wrapper)
+- PWA (vite-plugin-pwa)
+
+### ローカルでの実行
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### デプロイ
+GitHub Pagesにデプロイされています。
+```bash
+npm run deploy
 ```
