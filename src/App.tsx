@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import { RecordScreen } from './components/RecordScreen'
 import { HistoryScreen } from './components/HistoryScreen'
+import { SettingsScreen } from './components/SettingsScreen'
 import { Button } from './components/ui/button'
-import { History, PlusCircle } from 'lucide-react'
+import { History, PlusCircle, Settings } from 'lucide-react'
 
 function App() {
-  const [view, setView] = useState<'record' | 'history'>('record')
+  const [view, setView] = useState<'record' | 'history' | 'settings'>('record')
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main>
         {view === 'record' ? (
           <RecordScreen />
-        ) : (
+        ) : view === 'history' ? (
           <HistoryScreen />
+        ) : (
+          <SettingsScreen />
         )}
       </main>
 
@@ -32,6 +35,13 @@ function App() {
         >
           <History className="mr-2 h-4 w-4" />
           History
+        </Button>
+        <Button
+          variant={view === 'settings' ? 'default' : 'ghost'}
+          onClick={() => setView('settings')}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
         </Button>
       </nav>
     </div>
