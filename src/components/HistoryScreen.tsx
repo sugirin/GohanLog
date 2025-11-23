@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { format } from "date-fns"
-import { Search, Users, X } from "lucide-react"
+import { Search, Users, X, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,17 +9,20 @@ import { db } from "@/lib/db"
 
 export function HistoryScreen() {
     const [searchQuery, setSearchQuery] = React.useState("")
-    const [activeTag, setActiveTag] = React.useState<string | null>(null)
+    const [activePerson, setActivePerson] = React.useState<string | null>(null)
+    const [activePlace, setActivePlace] = React.useState<string | null>(null)
 
     const logs = useLiveQuery(async () => {
         let collection = db.logs.orderBy('date').reverse()
 
-        if (activeTag) {
+        if (activePerson) {
             // Filter by person tag
-            // Note: Dexie doesn't support complex multi-entry filtering easily in one go with other filters
-            // So we filter in memory for this simple app if needed, or use where clause
-            // Using filter() on collection is efficient enough for small datasets
-            collection = collection.filter(log => log.people.includes(activeTag))
+            collection = collection.filter(log => log.people.includes(activePerson))
+        }
+
+        if (activePlace) {
+            // Filter by place tag
+            collection = collection.filter(log => log.place === activePlace)
         }
 
         if (searchQuery) {
@@ -31,7 +34,7 @@ export function HistoryScreen() {
         }
 
         return collection.limit(50).toArray()
-    }, [searchQuery, activeTag]) || []
+    }, [searchQuery, activePerson, activePlace]) || []
 
     const [selectedPhoto, setSelectedPhoto] = React.useState<Blob | null>(null)
 
@@ -58,15 +61,29 @@ export function HistoryScreen() {
                         )}
                     </div>
 
-                    {activeTag && (
+                    {(activePerson || activePlace) && (
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">Filtering by:</span>
-                            <Badge variant="secondary" className="gap-1 pl-2">
-                                {activeTag}
-                                <button onClick={() => setActiveTag(null)} className="hover:text-destructive">
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </Badge>
+                            <div className="flex gap-2">
+                                {activePlace && (
+                                    <Badge variant="secondary" className="gap-1 pl-2">
+                                        <MapPin className="h-3 w-3" />
+                                        {activePlace}
+                                        <button onClick={() => setActivePlace(null)} className="hover:text-destructive">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                )}
+                                {activePerson && (
+                                    <Badge variant="secondary" className="gap-1 pl-2">
+                                        <Users className="h-3 w-3" />
+                                        {activePerson}
+                                        <button onClick={() => setActivePerson(null)} className="hover:text-destructive">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -77,7 +94,7 @@ export function HistoryScreen() {
                             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                                 <Search className="h-8 w-8 opacity-50" />
                             </div>
-                            <p>{searchQuery || activeTag ? "No memories found matching your search." : "No memories yet. Start recording!"}</p>
+                            <p>{searchQuery || activePerson || activePlace ? "No memories found matching your search." : "No memories yet. Start recording!"}</p>
                         </div>
                     ) : (
                         logs.map(log => (
@@ -85,7 +102,16 @@ export function HistoryScreen() {
                                 <CardContent className="p-4 flex items-start gap-3">
                                     <div className="flex-1 space-y-2 min-w-0">
                                         <div className="flex justify-between items-start">
-                                            <h3 className="font-bold text-lg truncate pr-2">{log.place}</h3>
+                                            <Badge
+                                                variant={activePlace === log.place ? "default" : "outline"}
+                                                className="text-base font-bold cursor-pointer hover:bg-primary/20 px-2 py-1 max-w-full truncate"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setActivePlace(activePlace === log.place ? null : log.place)
+                                                }}
+                                            >
+                                                {log.place}
+                                            </Badge>
                                         </div>
                                         <span className="text-sm text-muted-foreground block">
                                             {format(new Date(log.date), 'MMM d, yyyy')}
@@ -97,11 +123,11 @@ export function HistoryScreen() {
                                                 {log.people.map(person => (
                                                     <Badge
                                                         key={person}
-                                                        variant={activeTag === person ? "default" : "secondary"}
+                                                        variant={activePerson === person ? "default" : "secondary"}
                                                         className="text-xs cursor-pointer hover:bg-primary/20 px-1.5 py-0"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
-                                                            setActiveTag(activeTag === person ? null : person)
+                                                            setActivePerson(activePerson === person ? null : person)
                                                         }}
                                                     >
                                                         {person}
