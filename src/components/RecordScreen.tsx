@@ -89,7 +89,7 @@ export function RecordScreen() {
 
     return (
         <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
+            <div className="flex-1 flex flex-col p-0 gap-0 overflow-hidden">
                 <div className="flex items-center justify-between shrink-0">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         GohanLog
@@ -113,10 +113,10 @@ export function RecordScreen() {
                 </div>
 
                 {/* Main Content Area - Split into Top (Where/Who) and Bottom (Photos) */}
-                <div className="flex-1 flex flex-col gap-4 min-h-0">
+                <div className="flex-1 flex flex-col gap-2 min-h-0">
 
                     {/* Top Section: Where and Who - Split 50:50 */}
-                    <div className="flex-1 flex flex-col gap-4 min-h-0">
+                    <div className="flex-1 flex flex-col gap-2 min-h-0">
                         {/* Where Section - Takes 50% of available space */}
                         <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-3 bg-card/30">
                             <div className="flex items-center gap-2 text-muted-foreground shrink-0">
@@ -205,7 +205,7 @@ export function RecordScreen() {
                     </div>
 
                     {/* Bottom Section: Photos - Fixed height or auto */}
-                    <div className="shrink-0 space-y-2 pt-2 border-t">
+                    <div className="shrink-0 space-y-2 pt-2 pb-2 border-t">
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Camera className="h-4 w-4" />
                             <span className="text-sm font-medium">Photos</span>
@@ -240,11 +240,15 @@ export function RecordScreen() {
                         {(thumbnails.length > 0 || isProcessingPhotos) && (
                             <div className="flex gap-2 overflow-x-auto pb-2 h-20 items-center">
                                 {thumbnails.map((thumb, i) => (
-                                    <div key={i} className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border shadow-sm group">
-                                        <img src={URL.createObjectURL(thumb)} alt="preview" className="object-cover w-full h-full" />
+                                    <div key={i} className="relative flex-shrink-0 w-16 h-16 group block">
+                                        <div className="w-full h-full rounded-lg overflow-hidden border shadow-sm">
+                                            <img src={URL.createObjectURL(thumb)} alt="preview" className="object-cover w-full h-full" />
+                                        </div>
                                         <button
                                             onClick={() => handleRemovePhoto(i)}
-                                            className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute z-10 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 shadow-sm"
+                                            style={{ position: 'absolute', top: '4px', right: '4px' }}
+                                            type="button"
                                         >
                                             <X className="h-3 w-3" />
                                         </button>
@@ -262,10 +266,10 @@ export function RecordScreen() {
             </div>
 
             {/* Bottom Action */}
-            <div className="p-4 bg-background border-t shrink-0 flex gap-4">
+            <div className="px-2 pt-2 pb-0 bg-background border-t shrink-0 flex gap-2">
                 <Button
                     variant="ghost"
-                    className="flex-1 h-48 text-lg shadow-lg !bg-red-100 !text-red-900 hover:!bg-red-200"
+                    className="flex-1 h-12 text-lg shadow-lg bg-destructive/10 text-destructive hover:bg-destructive/20"
                     onClick={() => {
                         if (confirm("Clear all fields?")) {
                             setPlace("")
@@ -281,7 +285,7 @@ export function RecordScreen() {
                     Clear All
                 </Button>
                 <Button
-                    className="flex-[2] h-48 text-lg shadow-lg !bg-blue-800 !text-white hover:!bg-blue-900"
+                    className="flex-[2] h-12 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={handleSubmit}
                     disabled={isSaving || !place || isProcessingPhotos}
                 >
