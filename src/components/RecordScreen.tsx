@@ -262,9 +262,26 @@ export function RecordScreen() {
             </div>
 
             {/* Bottom Action */}
-            <div className="p-4 bg-background border-t shrink-0">
+            <div className="p-4 bg-background border-t shrink-0 flex gap-4">
                 <Button
-                    className="w-full h-12 text-lg shadow-lg"
+                    variant="ghost"
+                    className="flex-1 h-24 text-lg shadow-lg !bg-red-100 !text-red-900 hover:!bg-red-200"
+                    onClick={() => {
+                        if (confirm("Clear all fields?")) {
+                            setPlace("")
+                            setPeople([])
+                            setPhotos([])
+                            setThumbnails([])
+                            setDate(new Date())
+                        }
+                    }}
+                    disabled={isSaving || isProcessingPhotos}
+                >
+                    <X className="mr-2 h-5 w-5" />
+                    Clear All
+                </Button>
+                <Button
+                    className="flex-[2] h-24 text-lg shadow-lg !bg-blue-800 !text-white hover:!bg-blue-900"
                     onClick={handleSubmit}
                     disabled={isSaving || !place || isProcessingPhotos}
                 >
