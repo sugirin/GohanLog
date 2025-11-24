@@ -21,7 +21,7 @@ function App() {
       </main>
 
       {/* Bottom Navigation for mobile feel */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-1 flex justify-around items-center z-50 safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-1 pt-1 pb-3 flex justify-around items-center z-50 safe-area-pb">
         <Button
           variant={view === 'record' ? 'default' : 'ghost'}
           onClick={() => setView('record')}
