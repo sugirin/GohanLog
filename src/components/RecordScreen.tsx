@@ -265,7 +265,7 @@ export function RecordScreen() {
             <div className="p-4 bg-background border-t shrink-0 flex gap-4">
                 <Button
                     variant="ghost"
-                    className="flex-1 h-24 text-lg shadow-lg !bg-red-100 !text-red-900 hover:!bg-red-200"
+                    className="flex-1 h-48 text-lg shadow-lg !bg-red-100 !text-red-900 hover:!bg-red-200"
                     onClick={() => {
                         if (confirm("Clear all fields?")) {
                             setPlace("")
@@ -281,7 +281,7 @@ export function RecordScreen() {
                     Clear All
                 </Button>
                 <Button
-                    className="flex-[2] h-24 text-lg shadow-lg !bg-blue-800 !text-white hover:!bg-blue-900"
+                    className="flex-[2] h-48 text-lg shadow-lg !bg-blue-800 !text-white hover:!bg-blue-900"
                     onClick={handleSubmit}
                     disabled={isSaving || !place || isProcessingPhotos}
                 >

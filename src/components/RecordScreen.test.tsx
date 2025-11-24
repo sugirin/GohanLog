@@ -34,7 +34,7 @@ describe('RecordScreen', () => {
         expect(saveButton.className).toContain('!text-white');
 
         // Check classes for height
-        expect(clearButton.className).toContain('h-24');
-        expect(saveButton.className).toContain('h-24');
+        expect(clearButton.className).toContain('h-48');
+        expect(saveButton.className).toContain('h-48');
     });
 });
