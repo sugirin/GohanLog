@@ -23,7 +23,7 @@ export async function saveLog(log: Log) {
         await db.logs.add(log)
 
         // Update place tag
-        const placeTag = await db.tags.where({ type: 'place', name: log.place }).first()
+        const placeTag = await db.tags.where('[type+name]').equals(['place', log.place]).first()
         if (placeTag) {
             await db.tags.update(placeTag.id!, {
                 count: placeTag.count + 1,
@@ -40,7 +40,7 @@ export async function saveLog(log: Log) {
 
         // Update people tags
         for (const person of log.people) {
-            const personTag = await db.tags.where({ type: 'person', name: person }).first()
+            const personTag = await db.tags.where('[type+name]').equals(['person', person]).first()
             if (personTag) {
                 await db.tags.update(personTag.id!, {
                     count: personTag.count + 1,
@@ -83,14 +83,14 @@ export async function updateLog(id: number, newLog: Log) {
         // Update place tags
         if (oldLog.place !== newLog.place) {
             // Decrement old place
-            const oldPlaceTag = await db.tags.where({ type: 'place', name: oldLog.place }).first()
+            const oldPlaceTag = await db.tags.where('[type+name]').equals(['place', oldLog.place]).first()
             if (oldPlaceTag) {
                 const newCount = Math.max(0, oldPlaceTag.count - 1)
                 await db.tags.update(oldPlaceTag.id!, { count: newCount })
             }
 
             // Increment new place
-            const newPlaceTag = await db.tags.where({ type: 'place', name: newLog.place }).first()
+            const newPlaceTag = await db.tags.where('[type+name]').equals(['place', newLog.place]).first()
             if (newPlaceTag) {
                 await db.tags.update(newPlaceTag.id!, {
                     count: newPlaceTag.count + 1,
@@ -110,7 +110,7 @@ export async function updateLog(id: number, newLog: Log) {
         // 1. Decrement counts for people removed
         const peopleRemoved = oldLog.people.filter(p => !newLog.people.includes(p))
         for (const person of peopleRemoved) {
-            const tag = await db.tags.where({ type: 'person', name: person }).first()
+            const tag = await db.tags.where('[type+name]').equals(['person', person]).first()
             if (tag) {
                 const newCount = Math.max(0, tag.count - 1)
                 await db.tags.update(tag.id!, { count: newCount })
@@ -120,7 +120,7 @@ export async function updateLog(id: number, newLog: Log) {
         // 2. Increment counts for people added
         const peopleAdded = newLog.people.filter(p => !oldLog.people.includes(p))
         for (const person of peopleAdded) {
-            const tag = await db.tags.where({ type: 'person', name: person }).first()
+            const tag = await db.tags.where('[type+name]').equals(['person', person]).first()
             if (tag) {
                 await db.tags.update(tag.id!, {
                     count: tag.count + 1,

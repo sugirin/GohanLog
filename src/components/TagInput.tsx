@@ -10,9 +10,10 @@ interface TagInputProps {
     tags: string[]
     suggestions: Tag[]
     onTagsChange: (tags: string[]) => void
+    hideTags?: boolean
 }
 
-export function TagInput({ label, placeholder, tags, suggestions, onTagsChange }: TagInputProps) {
+export function TagInput({ label, placeholder, tags, suggestions, onTagsChange, hideTags = false }: TagInputProps) {
     const [input, setInput] = React.useState("")
     const [showSuggestions, setShowSuggestions] = React.useState(false)
 
@@ -21,9 +22,20 @@ export function TagInput({ label, placeholder, tags, suggestions, onTagsChange }
         .slice(0, 5)
 
     const addTag = (name: string) => {
-        if (name.trim() && !tags.includes(name.trim())) {
-            onTagsChange([...tags, name.trim()])
+        // カンマで分割し、各名前を個別に処理
+        const names = name.split(/[,、]/).map(n => n.trim()).filter(n => n)
+
+        const newTags = [...tags]
+        for (const n of names) {
+            if (n && !newTags.includes(n)) {
+                newTags.push(n)
+            }
         }
+
+        if (newTags.length > tags.length) {
+            onTagsChange(newTags)
+        }
+
         setInput("")
         setShowSuggestions(false)
     }
@@ -34,19 +46,23 @@ export function TagInput({ label, placeholder, tags, suggestions, onTagsChange }
 
     return (
         <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                {label}
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="text-sm py-1 px-2">
-                        {tag}
-                        <button onClick={() => removeTag(tag)} className="ml-2 hover:text-destructive">
-                            <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
-                ))}
-            </div>
+            {label && (
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {label}
+                </label>
+            )}
+            {!hideTags && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                    {tags.map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-sm py-1 px-2">
+                            {tag}
+                            <button onClick={() => removeTag(tag)} className="ml-2 hover:text-destructive">
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    ))}
+                </div>
+            )}
             <div className="relative">
                 <Input
                     value={input}

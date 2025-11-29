@@ -52,7 +52,7 @@ export function HistoryScreen() {
 
     return (
 
-        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in duration-500">
+        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in duration-500 safe-area-pt">
             <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 border rounded-md px-3 bg-background">
@@ -230,6 +230,7 @@ export function HistoryScreen() {
                         </div>
                     </div>
                 </div>
+            )}
         </div>
     )
 }

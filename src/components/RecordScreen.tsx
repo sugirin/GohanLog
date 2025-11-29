@@ -59,7 +59,8 @@ export function RecordScreen() {
 
     // Frequent tags (top 5) - already sorted by frequency
     const frequentPlaces = placeTags.slice(0, 5)
-    const frequentPeople = personTags.slice(0, 8)
+    // Show all people tags, sorted by frequency
+    const allPeople = personTags
 
     const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -142,7 +143,7 @@ export function RecordScreen() {
         .slice(0, 5)
 
     return (
-        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 safe-area-pt">
             <div className="flex-1 flex flex-col p-0 gap-0 overflow-hidden">
                 <div className="flex items-center justify-between shrink-0">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -166,54 +167,59 @@ export function RecordScreen() {
                     </Popover>
                 </div>
 
-                {/* Main Content Area - Split into Top (Where/Who) and Bottom (Photos) */}
-                <div className="flex-1 flex flex-col gap-2 min-h-0">
+                {/* Main Content Area - Compact Layout */}
+                <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
 
                     {/* Top Section: Where and Who - Split 50:50 */}
-                    <div className="flex-1 flex flex-col gap-2 min-h-0">
-                        {/* Where Section - Takes 50% of available space */}
-                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-3 bg-card/30">
-                            <div className="flex items-center gap-2 text-muted-foreground shrink-0">
-                                <MapPin className="h-4 w-4" />
-                                <span className="text-sm font-medium">Where?</span>
+                    <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
+                        {/* Where Section */}
+                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-2 bg-card/30">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-1 text-muted-foreground w-16 shrink-0">
+                                    <MapPin className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Where?</span>
+                                </div>
+                                <div className="relative flex-1">
+                                    <Input
+                                        value={place}
+                                        onChange={e => {
+                                            setPlace(e.target.value)
+                                            setShowPlaceSuggestions(true)
+                                        }}
+                                        onFocus={() => setShowPlaceSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
+                                        placeholder="Restaurant name"
+                                        className="text-base h-8"
+                                    />
+                                    {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
+                                        <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1">
+                                            {filteredPlaceTags.map(tag => (
+                                                <div
+                                                    key={tag.id}
+                                                    className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
+                                                    onClick={() => {
+                                                        setPlace(tag.name)
+                                                        setShowPlaceSuggestions(false)
+                                                    }}
+                                                >
+                                                    {tag.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="relative shrink-0 w-2/3">
-                                <Input
-                                    value={place}
-                                    onChange={e => {
-                                        setPlace(e.target.value)
-                                        setShowPlaceSuggestions(true)
-                                    }}
-                                    onFocus={() => setShowPlaceSuggestions(true)}
-                                    onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
-                                    placeholder="Restaurant name"
-                                    className="text-base h-9"
-                                />
-                                {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
-                                    <div className="absolute z-10 w-[150%] bg-background border rounded-md shadow-lg mt-1">
-                                        {filteredPlaceTags.map(tag => (
-                                            <div
-                                                key={tag.id}
-                                                className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
-                                                onClick={() => {
-                                                    setPlace(tag.name)
-                                                    setShowPlaceSuggestions(false)
-                                                }}
-                                            >
-                                                {tag.name}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            {/* Quick Place Tags - Scrollable if too many */}
+                            {/* Quick Place Tags */}
                             <div className="flex-1 overflow-y-auto content-start">
                                 <div className="flex flex-wrap gap-2">
                                     {frequentPlaces.map(tag => (
                                         <Badge
                                             key={tag.id}
-                                            variant="outline"
-                                            className="cursor-pointer hover:bg-secondary transition-colors"
+                                            variant={place === tag.name ? "default" : "outline"}
+                                            className={cn(
+                                                "cursor-pointer transition-colors",
+                                                place === tag.name ? "" : "hover:bg-secondary"
+                                            )}
                                             onClick={() => setPlace(tag.name)}
                                         >
                                             {tag.name}
@@ -223,90 +229,110 @@ export function RecordScreen() {
                             </div>
                         </div>
 
-                        {/* Who Section - Takes 50% of available space */}
-                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-3 bg-card/30">
-                            <div className="flex items-center gap-2 text-muted-foreground shrink-0">
-                                <Users className="h-4 w-4" />
-                                <span className="text-sm font-medium">Who?</span>
+                        {/* Who Section */}
+                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-2 bg-card/30">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-1 text-muted-foreground w-16 shrink-0">
+                                    <Users className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Who?</span>
+                                </div>
+                                <div className="flex-1">
+                                    <TagInput
+                                        label=""
+                                        placeholder="Add people..."
+                                        tags={people}
+                                        suggestions={personTags}
+                                        onTagsChange={setPeople}
+                                        hideTags={true}
+                                    />
+                                </div>
                             </div>
-                            <div className="w-2/3 shrink-0">
-                                <TagInput
-                                    label=""
-                                    placeholder="Add people..."
-                                    tags={people}
-                                    suggestions={personTags}
-                                    onTagsChange={setPeople}
-                                />
-                            </div>
-                            {/* Quick People Tags - Scrollable */}
+                            {/* All People Tags - Highlight selected */}
                             <div className="flex-1 overflow-y-auto content-start">
                                 <div className="flex flex-wrap gap-2">
-                                    {frequentPeople
-                                        .filter(p => !people.includes(p.name))
-                                        .map(tag => (
+                                    {/* 新規追加されたがまだDBにないタグを表示（一時的） */}
+                                    {people.filter(p => !allPeople.find(ap => ap.name === p)).map(name => (
+                                        <Badge
+                                            key={name}
+                                            variant="default"
+                                            className="cursor-pointer hover:bg-primary/90 transition-colors"
+                                            onClick={() => setPeople(people.filter(p => p !== name))}
+                                        >
+                                            {name}
+                                        </Badge>
+                                    ))}
+
+                                    {/* DBにある全タグを表示 */}
+                                    {allPeople.map(tag => {
+                                        const isSelected = people.includes(tag.name)
+                                        return (
                                             <Badge
                                                 key={tag.id}
-                                                variant="secondary"
-                                                className="cursor-pointer hover:bg-primary/20 transition-colors"
-                                                onClick={() => setPeople([...people, tag.name])}
+                                                variant={isSelected ? "default" : "secondary"}
+                                                className={cn(
+                                                    "cursor-pointer transition-colors",
+                                                    isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
+                                                )}
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setPeople(people.filter(p => p !== tag.name))
+                                                    } else {
+                                                        setPeople([...people, tag.name])
+                                                    }
+                                                }}
                                             >
-                                                + {tag.name}
+                                                {tag.name}
                                             </Badge>
-                                        ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Bottom Section: Photos - Fixed height or auto */}
-                    <div className="shrink-0 space-y-2 pt-2 pb-2 border-t">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Camera className="h-4 w-4" />
-                            <span className="text-sm font-medium">Photos</span>
-                        </div>
-
+                    {/* Bottom Section: Photos - No Label */}
+                    <div className="shrink-0 space-y-2 pt-1 pb-1 border-t">
                         {/* PWA警告メッセージ */}
                         {isWeb() && (
-                            <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
-                                <div className="text-xs text-yellow-800 dark:text-yellow-200">
-                                    <p className="font-semibold mb-1">Web版の制限</p>
-                                    <p>ブラウザ版では写真が永続保存されない場合があります。完全な機能をご利用いただくにはモバイルアプリ版をお勧めします。</p>
-                                </div>
+                            <div className="flex items-start gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-xs">
+                                <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
+                                <span className="text-yellow-800 dark:text-yellow-200">
+                                    Web版では写真が永続保存されない場合があります。
+                                </span>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                             {isNativePlatform() ? (
-                                // ネイティブアプリ版: ネイティブカメラとギャラリーを使用
+                                // ネイティブアプリ版
                                 <>
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
                                         onClick={handleNativeCamera}
                                         disabled={isProcessingPhotos}
                                     >
-                                        <Camera className="h-5 w-5 mb-1 text-primary" />
-                                        <span className="text-xs font-medium">Camera</span>
+                                        <Camera className="h-4 w-4 mb-0.5 text-primary" />
+                                        <span className="text-[10px] font-medium">Camera</span>
                                     </Button>
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
                                         onClick={handleNativeGallery}
                                         disabled={isProcessingPhotos}
                                     >
-                                        <ImageIcon className="h-5 w-5 mb-1 text-primary" />
-                                        <span className="text-xs font-medium">Gallery</span>
+                                        <ImageIcon className="h-4 w-4 mb-0.5 text-primary" />
+                                        <span className="text-[10px] font-medium">Gallery</span>
                                     </Button>
                                 </>
                             ) : (
-                                // Web版: 従来のファイル入力を使用
+                                // Web版
                                 <>
-                                    <label className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <Camera className="h-5 w-5 mb-1 text-primary" />
-                                        <span className="text-xs font-medium">Camera</span>
+                                    <label className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <Camera className="h-4 w-4 mb-0.5 text-primary" />
+                                        <span className="text-[10px] font-medium">Camera</span>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -315,9 +341,9 @@ export function RecordScreen() {
                                             onChange={handlePhotoSelect}
                                         />
                                     </label>
-                                    <div className="relative flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <ImageIcon className="h-5 w-5 mb-1 text-primary" />
-                                        <span className="text-xs font-medium">Album</span>
+                                    <div className="relative flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <ImageIcon className="h-4 w-4 mb-0.5 text-primary" />
+                                        <span className="text-[10px] font-medium">Album</span>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -331,7 +357,7 @@ export function RecordScreen() {
                         </div>
 
                         {(images.length > 0 || isProcessingPhotos) && (
-                            <div className="flex gap-2 overflow-x-auto pb-2 h-20 items-center">
+                            <div className="flex gap-2 overflow-x-auto pb-1 h-16 items-center">
                                 {images.map((img, i) => (
                                     <ImagePreview
                                         key={i}
@@ -340,7 +366,7 @@ export function RecordScreen() {
                                     />
                                 ))}
                                 {isProcessingPhotos && (
-                                    <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-muted rounded-lg">
+                                    <div className="flex-shrink-0 w-14 h-14 flex items-center justify-center bg-muted rounded-lg">
                                         <span className="text-xs text-muted-foreground animate-pulse">...</span>
                                     </div>
                                 )}

@@ -43,4 +43,8 @@ db.version(2).stores({
     });
 });
 
+db.version(3).stores({
+    tags: '++id, type, name, count, lastUsed, [type+count], [type+name]'
+});
+
 export { db };

@@ -54,7 +54,7 @@ export function SettingsScreen() {
     }
 
     return (
-        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 gap-4 overflow-y-auto">
+        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 gap-4 overflow-y-auto safe-area-pt">
             <h1 className="text-2xl font-bold">Settings</h1>
 
             <Card>
