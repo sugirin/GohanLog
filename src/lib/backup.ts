@@ -8,7 +8,10 @@ interface BackupData {
 }
 
 // Helper to convert Blob to Base64
-const blobToBase64 = (blob: Blob): Promise<string> => {
+const blobToBase64 = (blob: Blob | string): Promise<string> => {
+    if (typeof blob === 'string') {
+        return Promise.resolve(blob);
+    }
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);

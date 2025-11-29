@@ -60,3 +60,81 @@ export async function processImage(file: File): Promise<{ original: Blob, thumbn
 
     return { original, thumbnail }
 }
+
+/**
+ * Capacitorのカメラプラグインを使用して写真を撮影
+ * ネイティブプラットフォームでのみ動作
+ */
+export async function capturePhotoNative(): Promise<File> {
+    const { Camera } = await import('@capacitor/camera');
+    const { CameraResultType, CameraSource } = await import('@capacitor/camera');
+
+    const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera,
+        quality: 90,
+    });
+
+    if (!photo.webPath) {
+        throw new Error('Failed to capture photo');
+    }
+
+    // webPathからFileオブジェクトを作成
+    const response = await fetch(photo.webPath);
+    const blob = await response.blob();
+    const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    return file;
+}
+
+/**
+ * Capacitorのカメラプラグインを使用してギャラリーから写真を選択
+ * ネイティブプラットフォームでのみ動作
+ */
+export async function pickPhotoFromGallery(): Promise<File> {
+    const { Camera } = await import('@capacitor/camera');
+    const { CameraResultType, CameraSource } = await import('@capacitor/camera');
+
+    const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Photos,
+        quality: 90,
+    });
+
+    if (!photo.webPath) {
+        throw new Error('Failed to pick photo');
+    }
+
+    // webPathからFileオブジェクトを作成
+    const response = await fetch(photo.webPath);
+    const blob = await response.blob();
+    const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    return file;
+}
+
+/**
+ * BlobをBase64文字列に変換
+ */
+export function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+            } else {
+                reject(new Error('Failed to convert blob to base64'));
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+/**
+ * Base64文字列をBlobに変換
+ */
+export async function base64ToBlob(base64: string): Promise<Blob> {
+    const response = await fetch(base64);
+    return await response.blob();
+}

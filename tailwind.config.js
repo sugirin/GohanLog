@@ -5,7 +5,11 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

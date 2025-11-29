@@ -39,8 +39,16 @@ export function HistoryScreen() {
         return collection.limit(50).toArray()
     }, [searchQuery, activePerson, activePlace]) || []
 
-    const [selectedPhoto, setSelectedPhoto] = React.useState<Blob | null>(null)
+    const [selectedPhoto, setSelectedPhoto] = React.useState<Blob | string | null>(null)
     const [editingLog, setEditingLog] = React.useState<Log | null>(null)
+
+    // Helper to get image source from Blob or Base64 string
+    const getImageSrc = (image: Blob | string) => {
+        if (image instanceof Blob) {
+            return URL.createObjectURL(image)
+        }
+        return image // Base64 string
+    }
 
     return (
 
@@ -151,14 +159,22 @@ export function HistoryScreen() {
 
                                     {(log.thumbnails && log.thumbnails.length > 0) || (log.photos && log.photos.length > 0) ? (
                                         <div
-                                            className="h-20 w-20 shrink-0 rounded-md overflow-hidden cursor-pointer border bg-muted"
-                                            onClick={() => setSelectedPhoto(log.photos ? log.photos[0] : null)}
+                                            className="flex flex-wrap gap-2 mt-2"
+                                            onClick={(e) => e.stopPropagation()}
                                         >
-                                            <img
-                                                src={URL.createObjectURL(log.thumbnails && log.thumbnails.length > 0 ? log.thumbnails[0] : log.photos![0])}
-                                                alt={log.place}
-                                                className="w-full h-full object-cover"
-                                            />
+                                            {(log.thumbnails && log.thumbnails.length > 0 ? log.thumbnails : log.photos || []).map((img, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="h-20 w-20 shrink-0 rounded-md overflow-hidden cursor-pointer border bg-muted"
+                                                    onClick={() => setSelectedPhoto(log.photos ? log.photos[i] : null)}
+                                                >
+                                                    <img
+                                                        src={getImageSrc(img)}
+                                                        alt={`${log.place} ${i + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : null}
                                 </CardContent>
@@ -182,7 +198,7 @@ export function HistoryScreen() {
                     </button>
                     {selectedPhoto && (
                         <img
-                            src={URL.createObjectURL(selectedPhoto)}
+                            src={getImageSrc(selectedPhoto)}
                             alt="Full size"
                             className="max-w-full max-h-full object-contain rounded-md"
                             onClick={(e) => e.stopPropagation()}
@@ -214,7 +230,6 @@ export function HistoryScreen() {
                         </div>
                     </div>
                 </div>
-            )}
         </div>
     )
 }

@@ -1,7 +1,23 @@
 import { db, type Log } from "./db"
 import { format } from "date-fns"
+import { blobToBase64 } from "./imageUtils"
+import { isNativePlatform } from "./platformUtils"
 
 export async function saveLog(log: Log) {
+    // iOS/Native環境ではBlobが消える可能性があるためBase64に変換して保存
+    if (isNativePlatform()) {
+        if (log.photos && log.photos.length > 0) {
+            log.photos = await Promise.all(log.photos.map(async p =>
+                p instanceof Blob ? await blobToBase64(p) : p
+            ));
+        }
+        if (log.thumbnails && log.thumbnails.length > 0) {
+            log.thumbnails = await Promise.all(log.thumbnails.map(async p =>
+                p instanceof Blob ? await blobToBase64(p) : p
+            ));
+        }
+    }
+
     await db.transaction('rw', db.logs, db.tags, async () => {
         // Save log
         await db.logs.add(log)
@@ -43,6 +59,20 @@ export async function saveLog(log: Log) {
 }
 
 export async function updateLog(id: number, newLog: Log) {
+    // iOS/Native環境ではBlobが消える可能性があるためBase64に変換して保存
+    if (isNativePlatform()) {
+        if (newLog.photos && newLog.photos.length > 0) {
+            newLog.photos = await Promise.all(newLog.photos.map(async p =>
+                p instanceof Blob ? await blobToBase64(p) : p
+            ));
+        }
+        if (newLog.thumbnails && newLog.thumbnails.length > 0) {
+            newLog.thumbnails = await Promise.all(newLog.thumbnails.map(async p =>
+                p instanceof Blob ? await blobToBase64(p) : p
+            ));
+        }
+    }
+
     await db.transaction('rw', db.logs, db.tags, async () => {
         const oldLog = await db.logs.get(id)
         if (!oldLog) throw new Error(`Log with id ${id} not found`)

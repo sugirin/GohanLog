@@ -24,8 +24,8 @@ export function LogForm({ initialData, onSave, onCancel, submitLabel = "Save Mem
     const [date, setDate] = React.useState<Date>(initialData ? new Date(initialData.date) : new Date())
     const [place, setPlace] = React.useState(initialData?.place || "")
     const [people, setPeople] = React.useState<string[]>(initialData?.people || [])
-    const [photos, setPhotos] = React.useState<Blob[]>(initialData?.photos || [])
-    const [thumbnails, setThumbnails] = React.useState<Blob[]>(initialData?.thumbnails || [])
+    const [photos, setPhotos] = React.useState<(Blob | string)[]>(initialData?.photos?.filter(p => p instanceof Blob) as Blob[] || [])
+    const [thumbnails, setThumbnails] = React.useState<(Blob | string)[]>(initialData?.thumbnails?.filter(t => t instanceof Blob) as Blob[] || [])
     const [isSaving, setIsSaving] = React.useState(false)
     const [isProcessingPhotos, setIsProcessingPhotos] = React.useState(false)
 
@@ -237,7 +237,7 @@ export function LogForm({ initialData, onSave, onCancel, submitLabel = "Save Mem
                         <div className="flex gap-2 overflow-x-auto pb-2 h-20 items-center">
                             {thumbnails.map((thumb, i) => (
                                 <div key={i} className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border shadow-sm group">
-                                    <img src={URL.createObjectURL(thumb)} alt="preview" className="object-cover w-full h-full" />
+                                    <img src={thumb instanceof Blob ? URL.createObjectURL(thumb) : thumb} alt="preview" className="object-cover w-full h-full" />
                                     <button
                                         onClick={() => {
                                             setPhotos(prev => prev.filter((_, idx) => idx !== i))

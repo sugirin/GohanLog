@@ -5,8 +5,8 @@ export interface Log {
     date: string;
     place: string;
     people: string[];
-    photos?: Blob[];
-    thumbnails?: Blob[];
+    photos?: (Blob | string)[];
+    thumbnails?: (Blob | string)[];
 }
 
 export interface Tag {

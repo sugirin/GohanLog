@@ -105,7 +105,7 @@ export function SettingsScreen() {
                     </div>
 
                     {message && (
-                        <Alert variant={message.type === 'error' ? "destructive" : "default"} className={message.type === 'success' ? "border-green-500 text-green-600" : ""}>
+                        <Alert variant={message.type === 'error' ? "destructive" : "default"} className={message.type === 'success' ? "border-primary text-primary" : ""}>
                             {message.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                             <AlertTitle>{message.type === 'error' ? "Error" : "Success"}</AlertTitle>
                             <AlertDescription>

@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users, X } from "lucide-react"
+import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users, X, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
@@ -11,15 +11,46 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { saveLog, useTags } from "@/lib/actions"
 import { TagInput } from "./TagInput"
-import { processImage } from "@/lib/imageUtils"
+import { processImage, capturePhotoNative, pickPhotoFromGallery } from "@/lib/imageUtils"
+import { isNativePlatform, isWeb } from "@/lib/platformUtils"
 
+// メモリリークを防ぐための画像プレビューコンポーネント
+const ImagePreview = ({ blob, onRemove }: { blob: Blob, onRemove: () => void }) => {
+    const [url, setUrl] = React.useState<string>("")
+
+    React.useEffect(() => {
+        const objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+        return () => URL.revokeObjectURL(objectUrl)
+    }, [blob])
+
+    if (!url) return <div className="w-16 h-16 bg-muted rounded-lg animate-pulse" />
+
+    return (
+        <div className="relative flex-shrink-0 w-16 h-16 group block">
+            <div className="w-full h-full rounded-lg overflow-hidden border shadow-sm">
+                <img src={url} alt="preview" className="object-cover w-full h-full" />
+            </div>
+            <button
+                onClick={onRemove}
+                className="absolute z-10 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 shadow-sm"
+                style={{ position: 'absolute', top: '4px', right: '4px' }}
+                type="button"
+            >
+                <X className="h-3 w-3" />
+            </button>
+        </div>
+    )
+}
 
 export function RecordScreen() {
     const [date, setDate] = React.useState<Date>(new Date())
     const [place, setPlace] = React.useState("")
     const [people, setPeople] = React.useState<string[]>([])
-    const [photos, setPhotos] = React.useState<Blob[]>([])
-    const [thumbnails, setThumbnails] = React.useState<Blob[]>([])
+
+    // 画像とサムネイルを1つの状態で管理
+    const [images, setImages] = React.useState<{ original: Blob, thumbnail: Blob }[]>([])
+
     const [isSaving, setIsSaving] = React.useState(false)
     const [isProcessingPhotos, setIsProcessingPhotos] = React.useState(false)
 
@@ -37,9 +68,7 @@ export function RecordScreen() {
 
             try {
                 const processed = await Promise.all(newFiles.map(file => processImage(file)))
-
-                setPhotos(prev => [...prev, ...processed.map(p => p.original)])
-                setThumbnails(prev => [...prev, ...processed.map(p => p.thumbnail)])
+                setImages(prev => [...prev, ...processed])
             } catch (error) {
                 console.error("Error processing images", error)
                 alert("Failed to process some images")
@@ -51,9 +80,35 @@ export function RecordScreen() {
         }
     }
 
+    const handleNativeCamera = async () => {
+        setIsProcessingPhotos(true)
+        try {
+            const photo = await capturePhotoNative()
+            const processed = await processImage(photo)
+            setImages(prev => [...prev, processed])
+        } catch (error) {
+            console.error("Error capturing photo", error)
+            // キャンセル時はアラートを出さない
+        } finally {
+            setIsProcessingPhotos(false)
+        }
+    }
+
+    const handleNativeGallery = async () => {
+        setIsProcessingPhotos(true)
+        try {
+            const photo = await pickPhotoFromGallery()
+            const processed = await processImage(photo)
+            setImages(prev => [...prev, processed])
+        } catch (error) {
+            console.error("Error picking photo", error)
+        } finally {
+            setIsProcessingPhotos(false)
+        }
+    }
+
     const handleRemovePhoto = (index: number) => {
-        setPhotos(prev => prev.filter((_, i) => i !== index))
-        setThumbnails(prev => prev.filter((_, i) => i !== index))
+        setImages(prev => prev.filter((_, i) => i !== index))
     }
 
     const handleSubmit = async () => {
@@ -64,14 +119,13 @@ export function RecordScreen() {
                 date: format(date, 'yyyy-MM-dd'),
                 place: place.trim(),
                 people,
-                photos,
-                thumbnails,
+                photos: images.map(img => img.original),
+                thumbnails: images.map(img => img.thumbnail),
             })
             // Reset form
             setPlace("")
             setPeople([])
-            setPhotos([])
-            setThumbnails([])
+            setImages([])
             setDate(new Date())
             alert("Saved!")
         } catch (error) {
@@ -211,48 +265,79 @@ export function RecordScreen() {
                             <span className="text-sm font-medium">Photos</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <label className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                <Camera className="h-5 w-5 mb-1 text-primary" />
-                                <span className="text-xs font-medium">Camera</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    className="hidden"
-                                    onChange={handlePhotoSelect}
-                                />
-                            </label>
-                            {/* Album Input - Fixed for iOS */}
-                            <div className="relative flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                <ImageIcon className="h-5 w-5 mb-1 text-primary" />
-                                <span className="text-xs font-medium">Album</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    onChange={handlePhotoSelect}
-                                />
+                        {/* PWA警告メッセージ */}
+                        {isWeb() && (
+                            <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
+                                <div className="text-xs text-yellow-800 dark:text-yellow-200">
+                                    <p className="font-semibold mb-1">Web版の制限</p>
+                                    <p>ブラウザ版では写真が永続保存されない場合があります。完全な機能をご利用いただくにはモバイルアプリ版をお勧めします。</p>
+                                </div>
                             </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {isNativePlatform() ? (
+                                // ネイティブアプリ版: ネイティブカメラとギャラリーを使用
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        onClick={handleNativeCamera}
+                                        disabled={isProcessingPhotos}
+                                    >
+                                        <Camera className="h-5 w-5 mb-1 text-primary" />
+                                        <span className="text-xs font-medium">Camera</span>
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        onClick={handleNativeGallery}
+                                        disabled={isProcessingPhotos}
+                                    >
+                                        <ImageIcon className="h-5 w-5 mb-1 text-primary" />
+                                        <span className="text-xs font-medium">Gallery</span>
+                                    </Button>
+                                </>
+                            ) : (
+                                // Web版: 従来のファイル入力を使用
+                                <>
+                                    <label className="flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <Camera className="h-5 w-5 mb-1 text-primary" />
+                                        <span className="text-xs font-medium">Camera</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            capture="environment"
+                                            className="hidden"
+                                            onChange={handlePhotoSelect}
+                                        />
+                                    </label>
+                                    <div className="relative flex flex-col items-center justify-center h-16 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <ImageIcon className="h-5 w-5 mb-1 text-primary" />
+                                        <span className="text-xs font-medium">Album</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            onChange={handlePhotoSelect}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        {(thumbnails.length > 0 || isProcessingPhotos) && (
+                        {(images.length > 0 || isProcessingPhotos) && (
                             <div className="flex gap-2 overflow-x-auto pb-2 h-20 items-center">
-                                {thumbnails.map((thumb, i) => (
-                                    <div key={i} className="relative flex-shrink-0 w-16 h-16 group block">
-                                        <div className="w-full h-full rounded-lg overflow-hidden border shadow-sm">
-                                            <img src={URL.createObjectURL(thumb)} alt="preview" className="object-cover w-full h-full" />
-                                        </div>
-                                        <button
-                                            onClick={() => handleRemovePhoto(i)}
-                                            className="absolute z-10 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 shadow-sm"
-                                            style={{ position: 'absolute', top: '4px', right: '4px' }}
-                                            type="button"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </div>
+                                {images.map((img, i) => (
+                                    <ImagePreview
+                                        key={i}
+                                        blob={img.thumbnail}
+                                        onRemove={() => handleRemovePhoto(i)}
+                                    />
                                 ))}
                                 {isProcessingPhotos && (
                                     <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-muted rounded-lg">
@@ -274,8 +359,7 @@ export function RecordScreen() {
                         if (confirm("Clear all fields?")) {
                             setPlace("")
                             setPeople([])
-                            setPhotos([])
-                            setThumbnails([])
+                            setImages([])
                             setDate(new Date())
                         }
                     }}
