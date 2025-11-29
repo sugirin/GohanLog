@@ -9,8 +9,8 @@ function App() {
   const [view, setView] = useState<'record' | 'history' | 'settings'>('record')
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main>
+    <div className="h-[100dvh] w-screen flex flex-col bg-background text-foreground overflow-hidden safe-area-pt">
+      <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         {view === 'record' ? (
           <RecordScreen />
         ) : view === 'history' ? (
@@ -20,8 +20,8 @@ function App() {
         )}
       </main>
 
-      {/* Bottom Navigation for mobile feel */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-1 pt-3 pb-6 flex justify-around items-center z-50 safe-area-pb">
+      {/* Bottom Navigation */}
+      <nav className="shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-1 pt-3 pb-6 flex justify-around items-center z-50 safe-area-pb">
         <Button
           variant={view === 'record' ? 'default' : 'ghost'}
           onClick={() => setView('record')}

@@ -143,7 +143,7 @@ export function RecordScreen() {
         .slice(0, 5)
 
     return (
-        <div className="h-[calc(100vh-5rem)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 safe-area-pt">
+        <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-0">
             <div className="flex-1 flex flex-col p-0 gap-0 overflow-hidden">
                 <div className="flex items-center justify-between shrink-0">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -167,17 +167,17 @@ export function RecordScreen() {
                     </Popover>
                 </div>
 
-                {/* Main Content Area - Compact Layout */}
-                <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
+                {/* Main Content Area - Compact Layout - No Scroll */}
+                <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-hidden pb-1">
 
                     {/* Top Section: Where and Who - Split 50:50 */}
-                    <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
+                    <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-hidden justify-center">
                         {/* Where Section */}
-                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-2 bg-card/30">
+                        <div className="h-[38%] flex flex-col gap-1 overflow-hidden border rounded-lg p-1.5 bg-card/30">
                             <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center gap-1 text-muted-foreground w-16 shrink-0">
-                                    <MapPin className="h-4 w-4" />
-                                    <span className="text-sm font-medium">Where?</span>
+                                <div className="flex items-center gap-1 text-muted-foreground w-14 shrink-0">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-medium">Where?</span>
                                 </div>
                                 <div className="relative flex-1">
                                     <Input
@@ -189,7 +189,7 @@ export function RecordScreen() {
                                         onFocus={() => setShowPlaceSuggestions(true)}
                                         onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
                                         placeholder="Restaurant name"
-                                        className="text-base h-8"
+                                        className="text-sm h-7 px-2"
                                     />
                                     {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
                                         <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1">
@@ -211,13 +211,13 @@ export function RecordScreen() {
                             </div>
                             {/* Quick Place Tags */}
                             <div className="flex-1 overflow-y-auto content-start">
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-1.5">
                                     {frequentPlaces.map(tag => (
                                         <Badge
                                             key={tag.id}
                                             variant={place === tag.name ? "default" : "outline"}
                                             className={cn(
-                                                "cursor-pointer transition-colors",
+                                                "cursor-pointer transition-colors text-xs py-0.5 px-2",
                                                 place === tag.name ? "" : "hover:bg-secondary"
                                             )}
                                             onClick={() => setPlace(tag.name)}
@@ -230,11 +230,11 @@ export function RecordScreen() {
                         </div>
 
                         {/* Who Section */}
-                        <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-2 bg-card/30">
+                        <div className="h-[38%] flex flex-col gap-1 overflow-hidden border rounded-lg p-1.5 bg-card/30">
                             <div className="flex items-center gap-2 shrink-0">
                                 <div className="flex items-center gap-1 text-muted-foreground w-16 shrink-0">
-                                    <Users className="h-4 w-4" />
-                                    <span className="text-sm font-medium">Who?</span>
+                                    <Users className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-medium">Who?</span>
                                 </div>
                                 <div className="flex-1">
                                     <TagInput
@@ -249,13 +249,13 @@ export function RecordScreen() {
                             </div>
                             {/* All People Tags - Highlight selected */}
                             <div className="flex-1 overflow-y-auto content-start">
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-1.5">
                                     {/* 新規追加されたがまだDBにないタグを表示（一時的） */}
                                     {people.filter(p => !allPeople.find(ap => ap.name === p)).map(name => (
                                         <Badge
                                             key={name}
                                             variant="default"
-                                            className="cursor-pointer hover:bg-primary/90 transition-colors"
+                                            className="cursor-pointer hover:bg-primary/90 transition-colors text-xs py-0.5 px-2"
                                             onClick={() => setPeople(people.filter(p => p !== name))}
                                         >
                                             {name}
@@ -270,7 +270,7 @@ export function RecordScreen() {
                                                 key={tag.id}
                                                 variant={isSelected ? "default" : "secondary"}
                                                 className={cn(
-                                                    "cursor-pointer transition-colors",
+                                                    "cursor-pointer transition-colors text-xs py-0.5 px-2",
                                                     isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
                                                 )}
                                                 onClick={() => {
@@ -291,10 +291,10 @@ export function RecordScreen() {
                     </div>
 
                     {/* Bottom Section: Photos - No Label */}
-                    <div className="shrink-0 space-y-2 pt-1 pb-1 border-t">
+                    <div className="shrink-0 space-y-1 pt-1 border-t">
                         {/* PWA警告メッセージ */}
                         {isWeb() && (
-                            <div className="flex items-start gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-xs">
+                            <div className="flex items-start gap-2 p-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-[10px]">
                                 <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
                                 <span className="text-yellow-800 dark:text-yellow-200">
                                     Web版では写真が永続保存されない場合があります。
@@ -309,29 +309,29 @@ export function RecordScreen() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
                                         onClick={handleNativeCamera}
                                         disabled={isProcessingPhotos}
                                     >
-                                        <Camera className="h-4 w-4 mb-0.5 text-primary" />
+                                        <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
                                         <span className="text-[10px] font-medium">Camera</span>
                                     </Button>
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                        className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
                                         onClick={handleNativeGallery}
                                         disabled={isProcessingPhotos}
                                     >
-                                        <ImageIcon className="h-4 w-4 mb-0.5 text-primary" />
+                                        <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
                                         <span className="text-[10px] font-medium">Gallery</span>
                                     </Button>
                                 </>
                             ) : (
                                 // Web版
                                 <>
-                                    <label className="flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <Camera className="h-4 w-4 mb-0.5 text-primary" />
+                                    <label className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
                                         <span className="text-[10px] font-medium">Camera</span>
                                         <input
                                             type="file"
@@ -341,8 +341,8 @@ export function RecordScreen() {
                                             onChange={handlePhotoSelect}
                                         />
                                     </label>
-                                    <div className="relative flex flex-col items-center justify-center h-12 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <ImageIcon className="h-4 w-4 mb-0.5 text-primary" />
+                                    <div className="relative flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                        <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
                                         <span className="text-[10px] font-medium">Album</span>
                                         <input
                                             type="file"
@@ -357,7 +357,7 @@ export function RecordScreen() {
                         </div>
 
                         {(images.length > 0 || isProcessingPhotos) && (
-                            <div className="flex gap-2 overflow-x-auto pb-1 h-16 items-center">
+                            <div className="flex gap-2 overflow-x-auto pb-1 h-14 items-center">
                                 {images.map((img, i) => (
                                     <ImagePreview
                                         key={i}
@@ -366,7 +366,7 @@ export function RecordScreen() {
                                     />
                                 ))}
                                 {isProcessingPhotos && (
-                                    <div className="flex-shrink-0 w-14 h-14 flex items-center justify-center bg-muted rounded-lg">
+                                    <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-muted rounded-lg">
                                         <span className="text-xs text-muted-foreground animate-pulse">...</span>
                                     </div>
                                 )}

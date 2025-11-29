@@ -182,7 +182,7 @@
   }
 
   .safe-area-pt {
-    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
   }
 
   /* Hide scrollbar but keep scrolling functionality */
