@@ -1,12 +1,14 @@
 import * as React from "react"
-import { Download, Upload, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react"
+import { Download, Upload, AlertTriangle, CheckCircle2, Trash2, Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { exportData, importData } from "@/lib/backup"
 import { deleteAllLogs } from "@/lib/actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useTranslation } from "@/lib/i18n/LanguageContext"
 
 export function SettingsScreen() {
+    const { t, language, setLanguage } = useTranslation()
     const [isExporting, setIsExporting] = React.useState(false)
     const [isImporting, setIsImporting] = React.useState(false)
     const [message, setMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -17,10 +19,10 @@ export function SettingsScreen() {
         setMessage(null)
         try {
             await exportData()
-            setMessage({ type: 'success', text: 'Data exported successfully!' })
+            setMessage({ type: 'success', text: t('settings.successExport') })
         } catch (error) {
             console.error(error)
-            setMessage({ type: 'error', text: 'Failed to export data.' })
+            setMessage({ type: 'error', text: t('settings.errorExport') })
         } finally {
             setIsExporting(false)
         }
@@ -34,7 +36,7 @@ export function SettingsScreen() {
         const file = e.target.files?.[0]
         if (!file) return
 
-        if (!confirm("Importing data will merge with your current data. Existing records with the same ID will be overwritten. Are you sure?")) {
+        if (!confirm(t('settings.confirmImport'))) {
             e.target.value = ''
             return
         }
@@ -43,11 +45,10 @@ export function SettingsScreen() {
         setMessage(null)
         try {
             await importData(file)
-            setMessage({ type: 'success', text: 'Data imported successfully! Please refresh the page to see changes.' })
-            // Optional: Reload page to reflect changes immediately if needed, but let's just show success first.
+            setMessage({ type: 'success', text: t('settings.successImport') })
         } catch (error) {
             console.error(error)
-            setMessage({ type: 'error', text: 'Failed to import data. Please check the file format.' })
+            setMessage({ type: 'error', text: t('settings.errorImport') })
         } finally {
             setIsImporting(false)
             e.target.value = ''
@@ -56,20 +57,48 @@ export function SettingsScreen() {
 
     return (
         <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 gap-4 overflow-y-auto">
-            <h1 className="text-2xl font-bold">Settings</h1>
+            <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Data Management</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        <Languages className="h-5 w-5" />
+                        {t('settings.language')}
+                    </CardTitle>
                     <CardDescription>
-                        Backup your memories or restore them from a file.
+                        {t('settings.languageDescription')}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex gap-4">
+                    <Button
+                        variant={language === 'ja' ? 'default' : 'outline'}
+                        onClick={() => setLanguage('ja')}
+                        className="flex-1"
+                    >
+                        日本語
+                    </Button>
+                    <Button
+                        variant={language === 'en' ? 'default' : 'outline'}
+                        onClick={() => setLanguage('en')}
+                        className="flex-1"
+                    >
+                        English
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('settings.dataManagement')}</CardTitle>
+                    <CardDescription>
+                        {t('settings.backupDescription')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Export Data</h3>
+                        <h3 className="text-sm font-medium">{t('settings.export')}</h3>
                         <p className="text-sm text-muted-foreground">
-                            Save all your logs and photos to a JSON file. This is useful for backing up your data or moving to another device.
+                            {t('settings.exportDescription')}
                         </p>
                         <Button
                             onClick={handleExport}
@@ -78,14 +107,14 @@ export function SettingsScreen() {
                             className="w-full sm:w-auto"
                         >
                             <Download className="mr-2 h-4 w-4" />
-                            {isExporting ? "Exporting..." : "Export Backup"}
+                            {isExporting ? t('settings.exporting') : t('settings.exportButton')}
                         </Button>
                     </div>
 
                     <div className="border-t pt-4 space-y-2">
-                        <h3 className="text-sm font-medium">Import Data</h3>
+                        <h3 className="text-sm font-medium">{t('settings.import')}</h3>
                         <p className="text-sm text-muted-foreground">
-                            Restore data from a previously exported JSON file.
+                            {t('settings.importDescription')}
                         </p>
                         <input
                             type="file"
@@ -101,25 +130,25 @@ export function SettingsScreen() {
                             className="w-full sm:w-auto"
                         >
                             <Upload className="mr-2 h-4 w-4" />
-                            {isImporting ? "Importing..." : "Import Backup"}
+                            {isImporting ? t('settings.importing') : t('settings.importButton')}
                         </Button>
                     </div>
 
                     <div className="border-t pt-4 space-y-2">
-                        <h3 className="text-sm font-medium text-destructive">Danger Zone</h3>
+                        <h3 className="text-sm font-medium text-destructive">{t('settings.dangerZone')}</h3>
                         <p className="text-sm text-muted-foreground">
-                            Delete all memories. This action cannot be undone.
+                            {t('settings.deleteAllDescription')}
                         </p>
                         <Button
                             onClick={async () => {
-                                if (confirm("Are you sure you want to delete ALL logs? This will delete all your memories. Tag suggestions will remain but counts will be reset.")) {
-                                    if (confirm("This is your last chance. Are you absolutely sure?")) {
+                                if (confirm(t('settings.confirmDelete'))) {
+                                    if (confirm(t('settings.confirmDeleteFinal'))) {
                                         try {
                                             await deleteAllLogs()
-                                            setMessage({ type: 'success', text: 'All logs deleted successfully.' })
+                                            setMessage({ type: 'success', text: t('settings.successDelete') })
                                         } catch (e) {
                                             console.error(e)
-                                            setMessage({ type: 'error', text: 'Failed to delete logs.' })
+                                            setMessage({ type: 'error', text: t('settings.errorDelete') })
                                         }
                                     }
                                 }
@@ -128,7 +157,7 @@ export function SettingsScreen() {
                             className="w-full sm:w-auto"
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete All Logs
+                            {t('settings.deleteAllButton')}
                         </Button>
                     </div>
 
