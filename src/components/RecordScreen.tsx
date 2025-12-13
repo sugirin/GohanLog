@@ -194,13 +194,14 @@ export function RecordScreen() {
                                 {filteredPlaceTags.map(tag => (
                                     <div
                                         key={tag.id}
-                                        className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
+                                        className="px-4 py-2 hover:bg-muted cursor-pointer text-sm flex items-center gap-2"
                                         onClick={() => {
                                             setPlace(tag.name)
                                             setShowPlaceSuggestions(false)
                                         }}
                                     >
-                                        {tag.name}
+                                        {tag.emoji && <span>{tag.emoji}</span>}
+                                        <span>{tag.name}</span>
                                     </div>
                                 ))}
                             </div>
@@ -215,11 +216,12 @@ export function RecordScreen() {
                                 key={tag.id}
                                 variant={place === tag.name ? "default" : "outline"}
                                 className={cn(
-                                    "cursor-pointer transition-colors text-xs py-0.5 px-2",
+                                    "cursor-pointer transition-colors text-xs py-0.5 px-2 flex items-center gap-1",
                                     place === tag.name ? "" : "hover:bg-secondary"
                                 )}
                                 onClick={() => setPlace(tag.name)}
                             >
+                                {tag.emoji && <span>{tag.emoji}</span>}
                                 {tag.name}
                             </Badge>
                         ))}
@@ -266,7 +268,7 @@ export function RecordScreen() {
                                     key={tag.id}
                                     variant={isSelected ? "default" : "secondary"}
                                     className={cn(
-                                        "cursor-pointer transition-colors text-xs py-0.5 px-2",
+                                        "cursor-pointer transition-colors text-xs py-0.5 px-2 flex items-center gap-1",
                                         isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
                                     )}
                                     onClick={() => {
@@ -277,6 +279,7 @@ export function RecordScreen() {
                                         }
                                     }}
                                 >
+                                    {tag.emoji && <span>{tag.emoji}</span>}
                                     {tag.name}
                                 </Badge>
                             )

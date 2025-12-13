@@ -17,6 +17,11 @@ export function HistoryScreen() {
     const [activePerson, setActivePerson] = React.useState<string | null>(null)
     const [activePlace, setActivePlace] = React.useState<string | null>(null)
 
+    const allTags = useLiveQuery(() => db.tags.toArray()) || []
+    const getTagEmoji = (name: string, type: 'place' | 'person') => {
+        return allTags.find(t => t.type === type && t.name === name)?.emoji
+    }
+
     const logs = useLiveQuery(async () => {
         let collection = db.logs.orderBy('date').reverse()
 
@@ -46,7 +51,7 @@ export function HistoryScreen() {
 
     // Helper to get image source from Blob or Base64 string
     const getImageSrc = (image: Blob | string) => {
-        if (image instanceof Blob) {
+        if (typeof image !== 'string') {
             return URL.createObjectURL(image)
         }
         return image // Base64 string
@@ -82,6 +87,7 @@ export function HistoryScreen() {
                                 {activePlace && (
                                     <Badge variant="secondary" className="gap-1 pl-2">
                                         <MapPin className="h-3 w-3" />
+                                        {getTagEmoji(activePlace, 'place') && <span>{getTagEmoji(activePlace, 'place')}</span>}
                                         {activePlace}
                                         <button onClick={() => setActivePlace(null)} className="hover:text-destructive">
                                             <X className="h-3 w-3" />
@@ -91,6 +97,7 @@ export function HistoryScreen() {
                                 {activePerson && (
                                     <Badge variant="secondary" className="gap-1 pl-2">
                                         <Users className="h-3 w-3" />
+                                        {getTagEmoji(activePerson, 'person') && <span>{getTagEmoji(activePerson, 'person')}</span>}
                                         {activePerson}
                                         <button onClick={() => setActivePerson(null)} className="hover:text-destructive">
                                             <X className="h-3 w-3" />
@@ -118,12 +125,13 @@ export function HistoryScreen() {
                                         <div className="flex justify-between items-start">
                                             <Badge
                                                 variant={activePlace === log.place ? "default" : "outline"}
-                                                className="text-base font-bold cursor-pointer hover:bg-primary/20 px-2 py-1 max-w-full truncate"
+                                                className="text-base font-bold cursor-pointer hover:bg-primary/20 px-2 py-1 max-w-full truncate flex items-center gap-1.5"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     setActivePlace(activePlace === log.place ? null : log.place)
                                                 }}
                                             >
+                                                {getTagEmoji(log.place, 'place') && <span className="text-lg leading-none">{getTagEmoji(log.place, 'place')}</span>}
                                                 {log.place}
                                             </Badge>
                                             <Button
@@ -146,12 +154,13 @@ export function HistoryScreen() {
                                                     <Badge
                                                         key={person}
                                                         variant={activePerson === person ? "default" : "secondary"}
-                                                        className="text-xs cursor-pointer hover:bg-primary/20 px-1.5 py-0"
+                                                        className="text-xs cursor-pointer hover:bg-primary/20 px-1.5 py-0 flex items-center gap-1"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             setActivePerson(activePerson === person ? null : person)
                                                         }}
                                                     >
+                                                        {getTagEmoji(person, 'person') && <span>{getTagEmoji(person, 'person')}</span>}
                                                         {person}
                                                     </Badge>
                                                 ))}

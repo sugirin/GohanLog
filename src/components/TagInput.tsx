@@ -53,14 +53,18 @@ export function TagInput({ label, placeholder, tags, suggestions, onTagsChange, 
             )}
             {!hideTags && (
                 <div className="flex flex-wrap gap-2 mb-2">
-                    {tags.map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-sm py-1 px-2">
-                            {tag}
-                            <button onClick={() => removeTag(tag)} className="ml-2 hover:text-destructive">
-                                <X className="h-3 w-3" />
-                            </button>
-                        </Badge>
-                    ))}
+                    {tags.map(tagName => {
+                        const tag = suggestions.find(s => s.name === tagName)
+                        return (
+                            <Badge key={tagName} variant="secondary" className="text-sm py-1 px-2 flex items-center gap-1">
+                                {tag?.emoji && <span>{tag.emoji}</span>}
+                                {tagName}
+                                <button onClick={() => removeTag(tagName)} className="ml-1 hover:text-destructive">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        )
+                    })}
                 </div>
             )}
             <div className="relative">
@@ -85,11 +89,12 @@ export function TagInput({ label, placeholder, tags, suggestions, onTagsChange, 
                         {filteredSuggestions.map(suggestion => (
                             <div
                                 key={suggestion.id}
-                                className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
+                                className="px-4 py-2 hover:bg-muted cursor-pointer text-sm flex items-center gap-2"
                                 onClick={() => addTag(suggestion.name)}
                             >
-                                {suggestion.name}
-                                <span className="ml-2 text-xs text-muted-foreground">({suggestion.count})</span>
+                                {suggestion.emoji && <span>{suggestion.emoji}</span>}
+                                <span>{suggestion.name}</span>
+                                <span className="ml-auto text-xs text-muted-foreground">({suggestion.count})</span>
                             </div>
                         ))}
                         {input && !filteredSuggestions.find(s => s.name === input) && (
