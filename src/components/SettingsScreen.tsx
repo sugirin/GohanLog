@@ -1,8 +1,9 @@
 import * as React from "react"
-import { Download, Upload, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Download, Upload, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { exportData, importData } from "@/lib/backup"
+import { deleteAllLogs } from "@/lib/actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export function SettingsScreen() {
@@ -101,6 +102,33 @@ export function SettingsScreen() {
                         >
                             <Upload className="mr-2 h-4 w-4" />
                             {isImporting ? "Importing..." : "Import Backup"}
+                        </Button>
+                    </div>
+
+                    <div className="border-t pt-4 space-y-2">
+                        <h3 className="text-sm font-medium text-destructive">Danger Zone</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Delete all memories. This action cannot be undone.
+                        </p>
+                        <Button
+                            onClick={async () => {
+                                if (confirm("Are you sure you want to delete ALL logs? This will delete all your memories. Tag suggestions will remain but counts will be reset.")) {
+                                    if (confirm("This is your last chance. Are you absolutely sure?")) {
+                                        try {
+                                            await deleteAllLogs()
+                                            setMessage({ type: 'success', text: 'All logs deleted successfully.' })
+                                        } catch (e) {
+                                            console.error(e)
+                                            setMessage({ type: 'error', text: 'Failed to delete logs.' })
+                                        }
+                                    }
+                                }
+                            }}
+                            variant="destructive"
+                            className="w-full sm:w-auto"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete All Logs
                         </Button>
                     </div>
 

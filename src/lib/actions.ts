@@ -165,6 +165,16 @@ export async function deleteLog(id: number) {
     })
 }
 
+export async function deleteAllLogs() {
+    await db.transaction('rw', db.logs, db.tags, async () => {
+        // Clear all logs
+        await db.logs.clear()
+
+        // Reset all tag counts to 0 using modify
+        await db.tags.toCollection().modify({ count: 0 })
+    })
+}
+
 export function useTags(type: 'place' | 'person') {
     return db.tags
         .where('type').equals(type)
