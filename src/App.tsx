@@ -5,9 +5,11 @@ import { SettingsScreen } from './components/SettingsScreen'
 import { TagsScreen } from './components/TagsScreen'
 import { Button } from './components/ui/button'
 import { History, PlusCircle, Settings, Tag } from 'lucide-react'
+import { LanguageProvider, useTranslation } from './lib/i18n/LanguageContext'
 
-function App() {
+function AppContent() {
   const [view, setView] = useState<'record' | 'history' | 'settings' | 'tags'>('record')
+  const { t } = useTranslation()
 
   return (
     <div className="h-full w-full bg-background text-foreground overflow-hidden">
@@ -31,7 +33,7 @@ function App() {
           className="flex flex-col h-full justify-center gap-1 rounded-full flex-1"
         >
           <PlusCircle className="h-5 w-5" />
-          <span className="text-xs">Record</span>
+          <span className="text-xs">{t('nav.record')}</span>
         </Button>
         <Button
           variant={view === 'history' ? 'default' : 'ghost'}
@@ -39,7 +41,7 @@ function App() {
           className="flex flex-col h-full justify-center gap-1 rounded-full flex-1"
         >
           <History className="h-5 w-5" />
-          <span className="text-xs">History</span>
+          <span className="text-xs">{t('nav.history')}</span>
         </Button>
         <Button
           variant={view === 'tags' ? 'default' : 'ghost'}
@@ -47,7 +49,7 @@ function App() {
           className="flex flex-col h-full justify-center gap-1 rounded-full flex-1"
         >
           <Tag className="h-5 w-5" />
-          <span className="text-xs">Tags</span>
+          <span className="text-xs">{t('nav.tags')}</span>
         </Button>
         <Button
           variant={view === 'settings' ? 'default' : 'ghost'}
@@ -55,10 +57,18 @@ function App() {
           className="flex flex-col h-full justify-center gap-1 rounded-full flex-1"
         >
           <Settings className="h-5 w-5" />
-          <span className="text-xs">Settings</span>
+          <span className="text-xs">{t('nav.settings')}</span>
         </Button>
       </nav>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }
 
