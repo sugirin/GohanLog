@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { RecordScreen } from './components/RecordScreen'
 import { HistoryScreen } from './components/HistoryScreen'
 import { SettingsScreen } from './components/SettingsScreen'
+import { TagsScreen } from './components/TagsScreen'
 import { Button } from './components/ui/button'
-import { History, PlusCircle, Settings } from 'lucide-react'
+import { History, PlusCircle, Settings, Tag } from 'lucide-react'
 
 function App() {
-  const [view, setView] = useState<'record' | 'history' | 'settings'>('record')
+  const [view, setView] = useState<'record' | 'history' | 'settings' | 'tags'>('record')
 
   return (
     <div className="h-full w-full bg-background text-foreground overflow-hidden">
@@ -15,6 +16,8 @@ function App() {
           <RecordScreen />
         ) : view === 'history' ? (
           <HistoryScreen />
+        ) : view === 'tags' ? (
+          <TagsScreen />
         ) : (
           <SettingsScreen />
         )}
@@ -37,6 +40,14 @@ function App() {
         >
           <History className="h-5 w-5" />
           <span className="text-xs">History</span>
+        </Button>
+        <Button
+          variant={view === 'tags' ? 'default' : 'ghost'}
+          onClick={() => setView('tags')}
+          className="flex flex-col h-full justify-center gap-1 rounded-full flex-1"
+        >
+          <Tag className="h-5 w-5" />
+          <span className="text-xs">Tags</span>
         </Button>
         <Button
           variant={view === 'settings' ? 'default' : 'ghost'}

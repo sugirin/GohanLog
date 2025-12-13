@@ -83,6 +83,7 @@ describe('updateLog', () => {
         expect(personC?.count).toBe(1);
     });
 
+
     it('should not change counts if tags are unchanged', async () => {
         // 1. Create initial log
         const logId = await db.logs.add({
@@ -111,5 +112,102 @@ describe('updateLog', () => {
 
         expect(placeA?.count).toBe(1);
         expect(personA?.count).toBe(1);
+    });
+});
+
+import { addTag, deleteTag, renameTag } from './actions';
+
+describe('Tag Management', () => {
+    beforeEach(async () => {
+        await db.delete();
+        await db.open();
+    });
+
+    afterEach(() => {
+        db.close();
+    });
+
+    it('should add a new tag', async () => {
+        await addTag('New Place', 'place');
+        const tag = await db.tags.where({ type: 'place', name: 'New Place' }).first();
+        expect(tag).toBeDefined();
+        expect(tag?.count).toBe(0);
+    });
+
+    it('should delete a tag', async () => {
+        const id = await db.tags.add({ type: 'place', name: 'To Delete', count: 1, lastUsed: '2023-01-01' });
+        await deleteTag(id as number);
+        const tag = await db.tags.get(id as number);
+        expect(tag).toBeUndefined();
+    });
+
+    it('should rename a place tag and update logs', async () => {
+        // 1. Create Logs
+        await db.logs.add({ date: '2023-01-01', place: 'Old Name', people: [], photos: [], thumbnails: [] });
+        await db.logs.add({ date: '2023-01-02', place: 'Old Name', people: [], photos: [], thumbnails: [] });
+
+        // 2. Create Tag
+        const tagId = await db.tags.add({ type: 'place', name: 'Old Name', count: 2, lastUsed: '2023-01-02' });
+
+        // 3. Rename
+        await renameTag(tagId as number, 'Old Name', 'New Name', 'place');
+
+        // 4. Verify Tag
+        const oldTag = await db.tags.where({ type: 'place', name: 'Old Name' }).first();
+        const newTag = await db.tags.where({ type: 'place', name: 'New Name' }).first();
+        expect(oldTag).toBeUndefined();
+        expect(newTag).toBeDefined();
+        expect(newTag?.id).toBe(tagId);
+
+        // 5. Verify Logs
+        const logs = await db.logs.toArray();
+        expect(logs[0].place).toBe('New Name');
+        expect(logs[1].place).toBe('New Name');
+    });
+
+    it('should rename a person tag and update logs', async () => {
+        // 1. Create Logs
+        await db.logs.add({ date: '2023-01-01', place: 'Somewhere', people: ['Person A', 'Person B'], photos: [], thumbnails: [] });
+
+        // 2. Create Tag
+        const tagId = await db.tags.add({ type: 'person', name: 'Person A', count: 1, lastUsed: '2023-01-01' });
+
+        // 3. Rename
+        await renameTag(tagId as number, 'Person A', 'Person Z', 'person');
+
+        // 4. Verify Tag
+        const oldTag = await db.tags.where({ type: 'person', name: 'Person A' }).first();
+        const newTag = await db.tags.where({ type: 'person', name: 'Person Z' }).first();
+        expect(oldTag).toBeUndefined();
+        expect(newTag).toBeDefined();
+
+        // 5. Verify Logs
+        const logs = await db.logs.toArray();
+        expect(logs[0].people).toContain('Person Z');
+        expect(logs[0].people).not.toContain('Person A');
+        // Check Person B is untouched
+        expect(logs[0].people).toContain('Person B');
+    });
+
+    it('should merge tags if renaming to an existing tag name', async () => {
+        // Setup: 'Old' with count 1, 'New' with count 5.
+        // Rename 'Old' -> 'New'. Result should be 'New' with count 6. 'Old' deleted.
+
+        const oldId = await db.tags.add({ type: 'place', name: 'Old Name', count: 1, lastUsed: '2023-01-01' });
+        const newId = await db.tags.add({ type: 'place', name: 'New Name', count: 5, lastUsed: '2023-02-01' });
+
+        await db.logs.add({ date: '2023-01-01', place: 'Old Name', people: [], photos: [], thumbnails: [] });
+
+        await renameTag(oldId as number, 'Old Name', 'New Name', 'place');
+
+        const oldTag = await db.tags.get(oldId as number);
+        const newTag = await db.tags.get(newId as number);
+
+        expect(oldTag).toBeUndefined();
+        expect(newTag?.count).toBe(6);
+        expect(newTag?.lastUsed).toBe('2023-02-01');
+
+        const log = await db.logs.orderBy('date').first();
+        expect(log?.place).toBe('New Name');
     });
 });

@@ -182,6 +182,70 @@ export function useTags(type: 'place' | 'person') {
         .then(tags => tags.sort((a, b) => b.count - a.count)) // Sort by count descending
 }
 
+
 export function useRecentLogs() {
     return db.logs.orderBy('date').reverse().limit(20).toArray();
+}
+
+// Tag Management Actions
+
+export async function addTag(name: string, type: 'place' | 'person') {
+    await db.transaction('rw', db.tags, async () => {
+        const existingTag = await db.tags.where('[type+name]').equals([type, name]).first()
+        if (existingTag) {
+            // Already exists, maybe ensure count is at least 0? 
+            // Usually we just ignore duplicates for manual add, or maybe notify user?
+            // For now, let's just do nothing if it exists.
+            return;
+        }
+
+        await db.tags.add({
+            type,
+            name,
+            count: 0, // Manual add starts with 0 count
+            lastUsed: format(new Date(), 'yyyy-MM-dd')
+        })
+    })
+}
+
+export async function deleteTag(id: number) {
+    await db.tags.delete(id)
+}
+
+export async function renameTag(id: number, oldName: string, newName: string, type: 'place' | 'person') {
+    await db.transaction('rw', db.logs, db.tags, async () => {
+        // 1. Update the tag itself
+        const existingTag = await db.tags.where('[type+name]').equals([type, newName]).first()
+
+        if (existingTag) {
+            // Merge scenario: Target name already exists.
+            // We should add the current tag's count to the target tag, and delete the current tag.
+            // AND update all logs to point to the new name (which matches existingTag).
+            const oldTag = await db.tags.get(id)
+            if (oldTag) {
+                await db.tags.update(existingTag.id!, {
+                    count: existingTag.count + oldTag.count,
+                    lastUsed: new Date(existingTag.lastUsed) > new Date(oldTag.lastUsed) ? existingTag.lastUsed : oldTag.lastUsed
+                })
+                await db.tags.delete(id)
+            }
+        } else {
+            // Simple rename
+            await db.tags.update(id, { name: newName })
+        }
+
+        // 2. Update all logs that use this tag
+        if (type === 'place') {
+            await db.logs.where('place').equals(oldName).modify({ place: newName })
+        } else {
+            // For 'people', it's an array of strings. We need to iterate and replace.
+            // Dexie's modify can take a function.
+            await db.logs.filter(log => log.people.includes(oldName)).modify(log => {
+                const index = log.people.indexOf(oldName)
+                if (index !== -1) {
+                    log.people[index] = newName
+                }
+            })
+        }
+    })
 }
