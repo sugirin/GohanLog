@@ -117,6 +117,7 @@ export async function updateLog(id: number, newLog: Log) {
             }
         }
 
+
         // 2. Increment counts for people added
         const peopleAdded = newLog.people.filter(p => !oldLog.people.includes(p))
         for (const person of peopleAdded) {
@@ -133,6 +134,32 @@ export async function updateLog(id: number, newLog: Log) {
                     count: 1,
                     lastUsed: format(new Date(), 'yyyy-MM-dd')
                 })
+            }
+        }
+    })
+}
+
+export async function deleteLog(id: number) {
+    await db.transaction('rw', db.logs, db.tags, async () => {
+        const log = await db.logs.get(id)
+        if (!log) throw new Error(`Log with id ${id} not found`)
+
+        // Delete log
+        await db.logs.delete(id)
+
+        // Decrement place tag count
+        const placeTag = await db.tags.where('[type+name]').equals(['place', log.place]).first()
+        if (placeTag) {
+            const newCount = Math.max(0, placeTag.count - 1)
+            await db.tags.update(placeTag.id!, { count: newCount })
+        }
+
+        // Decrement people tag counts
+        for (const person of log.people) {
+            const personTag = await db.tags.where('[type+name]').equals(['person', person]).first()
+            if (personTag) {
+                const newCount = Math.max(0, personTag.count - 1)
+                await db.tags.update(personTag.id!, { count: newCount })
             }
         }
     })

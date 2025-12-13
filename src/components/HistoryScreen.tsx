@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { db, type Log } from "@/lib/db"
-import { updateLog } from "@/lib/actions"
+import { updateLog, deleteLog } from "@/lib/actions"
 import { LogForm } from "./LogForm"
 
 export function HistoryScreen() {
@@ -222,6 +222,12 @@ export function HistoryScreen() {
                                 initialData={editingLog}
                                 submitLabel="Update Memory"
                                 onCancel={() => setEditingLog(null)}
+                                onDelete={async () => {
+                                    if (window.confirm("Are you sure you want to delete this memory?")) {
+                                        await deleteLog(editingLog.id!)
+                                        setEditingLog(null)
+                                    }
+                                }}
                                 onSave={async (data) => {
                                     await updateLog(editingLog.id!, data)
                                     setEditingLog(null)

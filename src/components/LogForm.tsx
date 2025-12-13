@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users } from "lucide-react"
+import { Calendar as CalendarIcon, Camera, Image as ImageIcon, Save, MapPin, Users, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
@@ -17,10 +17,11 @@ interface LogFormProps {
     initialData?: Log
     onSave: (data: Log) => Promise<void>
     onCancel?: () => void
+    onDelete?: () => void
     submitLabel?: string
 }
 
-export function LogForm({ initialData, onSave, onCancel, submitLabel = "Save Memory" }: LogFormProps) {
+export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel = "Save Memory" }: LogFormProps) {
     const [date, setDate] = React.useState<Date>(initialData ? new Date(initialData.date) : new Date())
     const [place, setPlace] = React.useState(initialData?.place || "")
     const [people, setPeople] = React.useState<string[]>(initialData?.people || [])
@@ -259,8 +260,19 @@ export function LogForm({ initialData, onSave, onCancel, submitLabel = "Save Mem
                 </div>
             </div>
 
+
             {/* Bottom Action */}
             <div className="pt-4 bg-background border-t shrink-0 flex gap-2">
+                {onDelete && (
+                    <Button
+                        variant="destructive"
+                        className="h-12 w-12 px-0 shrink-0"
+                        onClick={onDelete}
+                        title="Delete"
+                    >
+                        <Trash2 className="h-5 w-5" />
+                    </Button>
+                )}
                 {onCancel && (
                     <Button
                         variant="outline"
