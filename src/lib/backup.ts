@@ -54,11 +54,32 @@ export async function exportData(): Promise<void> {
             tags
         };
 
-        const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+        const jsonString = JSON.stringify(backup);
+        const fileName = `gohan-log-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+        // Try Web Share API first (better for Mobile/PWA)
+        try {
+            const file = new File([jsonString], fileName, { type: 'application/json' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'GohanLog Backup',
+                    text: 'Backup data from GohanLog'
+                });
+                return; // Share successful, exit
+            }
+        } catch (shareError) {
+            console.warn('Web Share API failed or rejected, falling back to download:', shareError);
+            // Continue to fallback
+        }
+
+        // Fallback: Direct Download (Desktop / Non-share browsers)
+        const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `gohan-log-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
