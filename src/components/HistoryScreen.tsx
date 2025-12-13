@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button"
 import { db, type Log } from "@/lib/db"
 import { updateLog, deleteLog } from "@/lib/actions"
 import { LogForm } from "./LogForm"
+import { useTranslation } from "@/lib/i18n/LanguageContext"
 
 export function HistoryScreen() {
+    const { t } = useTranslation()
     const [searchQuery, setSearchQuery] = React.useState("")
     const [activePerson, setActivePerson] = React.useState<string | null>(null)
     const [activePlace, setActivePlace] = React.useState<string | null>(null)
@@ -106,7 +108,7 @@ export function HistoryScreen() {
                             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                                 <Search className="h-8 w-8 opacity-50" />
                             </div>
-                            <p>{searchQuery || activePerson || activePlace ? "No memories found matching your search." : "No memories yet. Start recording!"}</p>
+                            <p>{searchQuery || activePerson || activePlace ? "No memories found matching your search." : t('history.noLogs')}</p>
                         </div>
                     ) : (
                         logs.map(log => (
@@ -212,7 +214,7 @@ export function HistoryScreen() {
                 <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-background border rounded-lg shadow-lg w-full max-w-lg h-[90vh] flex flex-col overflow-hidden">
                         <div className="p-4 border-b flex items-center justify-between shrink-0">
-                            <h2 className="text-lg font-semibold">Edit Memory</h2>
+                            <h2 className="text-lg font-semibold">{t('history.edit')}</h2>
                             <Button variant="ghost" size="icon" onClick={() => setEditingLog(null)}>
                                 <X className="h-4 w-4" />
                             </Button>
@@ -220,10 +222,10 @@ export function HistoryScreen() {
                         <div className="flex-1 overflow-hidden p-4">
                             <LogForm
                                 initialData={editingLog}
-                                submitLabel="Update Memory"
+                                submitLabel={t('record.update')}
                                 onCancel={() => setEditingLog(null)}
                                 onDelete={async () => {
-                                    if (window.confirm("Are you sure you want to delete this memory?")) {
+                                    if (window.confirm(t('history.deleteConfirm'))) {
                                         await deleteLog(editingLog.id!)
                                         setEditingLog(null)
                                     }

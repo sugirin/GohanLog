@@ -12,6 +12,7 @@ import { useTags } from "@/lib/actions"
 import { TagInput } from "./TagInput"
 import { processImage } from "@/lib/imageUtils"
 import type { Log } from "@/lib/db"
+import { useTranslation } from "@/lib/i18n/LanguageContext"
 
 interface LogFormProps {
     initialData?: Log
@@ -21,7 +22,8 @@ interface LogFormProps {
     submitLabel?: string
 }
 
-export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel = "Save Memory" }: LogFormProps) {
+export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }: LogFormProps) {
+    const { t } = useTranslation()
     const [date, setDate] = React.useState<Date>(initialData ? new Date(initialData.date) : new Date())
     const [place, setPlace] = React.useState(initialData?.place || "")
     const [people, setPeople] = React.useState<string[]>(initialData?.people || [])
@@ -118,7 +120,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                     <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-3 bg-card/30">
                         <div className="flex items-center gap-2 text-muted-foreground shrink-0">
                             <MapPin className="h-4 w-4" />
-                            <span className="text-sm font-medium">Where?</span>
+                            <span className="text-sm font-medium">{t('record.where')}</span>
                         </div>
                         <div className="relative shrink-0 w-2/3">
                             <Input
@@ -129,7 +131,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                                 }}
                                 onFocus={() => setShowPlaceSuggestions(true)}
                                 onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
-                                placeholder="Restaurant name"
+                                placeholder={t('record.wherePlaceholder')}
                                 className="text-base h-9"
                             />
                             {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
@@ -170,12 +172,12 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                     <div className="flex-1 flex flex-col gap-2 overflow-hidden border rounded-lg p-3 bg-card/30">
                         <div className="flex items-center gap-2 text-muted-foreground shrink-0">
                             <Users className="h-4 w-4" />
-                            <span className="text-sm font-medium">Who?</span>
+                            <span className="text-sm font-medium">{t('record.who')}</span>
                         </div>
                         <div className="w-2/3 shrink-0">
                             <TagInput
                                 label=""
-                                placeholder="Add people..."
+                                placeholder={t('record.whoPlaceholder')}
                                 tags={people}
                                 suggestions={personTags}
                                 onTagsChange={setPeople}
@@ -205,7 +207,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                 <div className="shrink-0 space-y-2 pt-2 border-t">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Camera className="h-4 w-4" />
-                        <span className="text-sm font-medium">Photos</span>
+                        <span className="text-sm font-medium">{t('record.photo')}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -268,7 +270,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                         variant="destructive"
                         className="h-12 w-12 px-0 shrink-0"
                         onClick={onDelete}
-                        title="Delete"
+                        title={t('history.delete')}
                     >
                         <Trash2 className="h-5 w-5" />
                     </Button>
@@ -279,7 +281,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                         className="flex-1 h-12 text-lg"
                         onClick={onCancel}
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                 )}
                 <Button
@@ -288,7 +290,7 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel =
                     disabled={isSaving || !place || isProcessingPhotos}
                 >
                     <Save className="mr-2 h-5 w-5" />
-                    {isSaving ? "Saving..." : isProcessingPhotos ? "Processing..." : submitLabel}
+                    {isSaving ? t('record.saving') : isProcessingPhotos ? "Processing..." : (submitLabel || t('record.save'))}
                 </Button>
             </div>
         </div>

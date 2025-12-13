@@ -1,7 +1,7 @@
 
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
-import { MapPin, Users, Edit2, Trash2, Tag, Plus } from "lucide-react"
+import { MapPin, Users, Edit2, Trash2, Tag, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTags, addTag, deleteTag, renameTag } from "@/lib/actions"
 import type { Tag as TagType } from "@/lib/db"
+import { useTranslation } from "@/lib/i18n/LanguageContext"
 
 export function TagsScreen() {
+    const { t } = useTranslation()
     const places = useLiveQuery(() => useTags('place')) || []
     const people = useLiveQuery(() => useTags('person')) || []
     const [editingTag, setEditingTag] = React.useState<TagType | null>(null)
@@ -23,14 +25,14 @@ export function TagsScreen() {
             return
         }
 
-        if (confirm(`タグ「${oldName}」を「${newName}」に変更しますか？\nこれまでの記録もすべて更新されます。`)) {
+        if (confirm(t('tags.renameConfirm', { old: oldName, new: newName }))) {
             await renameTag(id, oldName, newName, type)
         }
         setEditingTag(null)
     }
 
     const handleDelete = async (tag: TagType) => {
-        if (confirm(`タグ「${tag.name}」を削除しますか？\n(過去の記録からテキストは消えませんが、サジェストに表示されなくなります)`)) {
+        if (confirm(t('tags.deleteConfirm', { name: tag.name }))) {
             await deleteTag(tag.id!)
         }
     }
@@ -48,7 +50,7 @@ export function TagsScreen() {
             <div className="p-4 bg-background border-b z-10">
                 <h1 className="text-xl font-bold flex items-center gap-2 mb-4">
                     <Tag className="h-5 w-5" />
-                    Manage Tags
+                    {t('tags.title')}
                 </h1>
             </div>
 
@@ -57,11 +59,11 @@ export function TagsScreen() {
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="places" className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            Place ({places.length})
+                            {t('tags.places')} ({places.length})
                         </TabsTrigger>
                         <TabsTrigger value="people" className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            People ({people.length})
+                            {t('tags.people')} ({people.length})
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -145,6 +147,8 @@ function TagList({
     onNewTagNameChange,
     onConfirmAdd
 }: TagListProps) {
+    const { t } = useTranslation()
+
     return (
         <div className="space-y-3 pb-20">
             {!isAdding ? (
@@ -154,7 +158,7 @@ function TagList({
                     onClick={onStartAdd}
                 >
                     <Plus className="mr-2 h-4 w-4" />
-                    新しいタグを追加
+                    {t('tags.add')}
                 </Button>
             ) : (
                 <Card className="border-primary/50">
@@ -163,15 +167,15 @@ function TagList({
                             autoFocus
                             value={newTagName}
                             onChange={(e) => onNewTagNameChange(e.target.value)}
-                            placeholder="タグ名を入力..."
+                            placeholder={t('tags.addPlaceholder')}
                             className="h-9"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') onConfirmAdd()
                                 if (e.key === 'Escape') onCancelAdd()
                             }}
                         />
-                        <Button size="sm" onClick={onConfirmAdd}>追加</Button>
-                        <Button size="sm" variant="ghost" onClick={onCancelAdd}><XIcon /></Button>
+                        <Button size="sm" onClick={onConfirmAdd}>{t('tags.addConfirm')}</Button>
+                        <Button size="sm" variant="ghost" onClick={onCancelAdd}><X className="h-4 w-4" /></Button>
                     </CardContent>
                 </Card>
             )}
@@ -201,8 +205,8 @@ function TagList({
                                         const input = document.getElementById(`edit-tag-${tag.id}`) as HTMLInputElement
                                         onConfirmEdit(tag.id!, tag.name, input.value, type)
                                     }}
-                                >保存</Button>
-                                <Button size="sm" variant="ghost" className="h-8" onClick={onCancelEdit}><XIcon /></Button>
+                                >{t('common.save')}</Button>
+                                <Button size="sm" variant="ghost" className="h-8" onClick={onCancelEdit}><X className="h-4 w-4" /></Button>
                             </div>
                         ) : (
                             <>
@@ -211,7 +215,7 @@ function TagList({
                                         {tag.name}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {tag.count}回
+                                        {tag.count}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-0.5 shrink-0">
@@ -230,29 +234,9 @@ function TagList({
 
             {tags.length === 0 && !isAdding && (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                    タグがありません
+                    {t('tags.noTags')}
                 </div>
             )}
         </div>
-    )
-}
-
-function XIcon() {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
-        >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-        </svg>
     )
 }
