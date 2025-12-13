@@ -196,7 +196,7 @@ function TagList({
                             placeholder="😀"
                             value={newTagEmoji}
                             onChange={(e) => onNewTagEmojiChange(e.target.value)}
-                            maxLength={2}
+                            maxLength={10}
                         />
                         <Input
                             autoFocus
@@ -225,7 +225,7 @@ function TagList({
                                     className="w-12 h-8 p-1 text-center text-lg"
                                     defaultValue={tag.emoji || ""}
                                     placeholder="😀"
-                                    maxLength={2}
+                                    maxLength={10}
                                 />
                                 <Input
                                     autoFocus
