@@ -48,7 +48,7 @@ export function TagsScreen() {
             <div className="p-4 bg-background border-b z-10">
                 <h1 className="text-xl font-bold flex items-center gap-2 mb-4">
                     <Tag className="h-5 w-5" />
-                    タグ管理
+                    Manage Tags
                 </h1>
             </div>
 
@@ -57,11 +57,11 @@ export function TagsScreen() {
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="places" className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
-                            場所 ({places.length})
+                            Place ({places.length})
                         </TabsTrigger>
                         <TabsTrigger value="people" className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            人 ({people.length})
+                            People ({people.length})
                         </TabsTrigger>
                     </TabsList>
                 </div>
