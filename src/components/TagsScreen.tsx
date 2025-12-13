@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useTags, addTag, deleteTag, renameTag } from "@/lib/actions"
+import { useTags, addTag, deleteTag, renameTag, updateTag } from "@/lib/actions"
 import type { Tag as TagType } from "@/lib/db"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
 
@@ -17,16 +17,34 @@ export function TagsScreen() {
     const people = useLiveQuery(() => useTags('person')) || []
     const [editingTag, setEditingTag] = React.useState<TagType | null>(null)
     const [newTagName, setNewTagName] = React.useState("")
+    const [newTagEmoji, setNewTagEmoji] = React.useState("")
     const [isAdding, setIsAdding] = React.useState<'place' | 'person' | null>(null)
 
-    const handleRename = async (id: number, oldName: string, newName: string, type: 'place' | 'person') => {
-        if (!newName.trim() || newName === oldName) {
-            setEditingTag(null)
-            return
+    const handleUpdate = async (tag: TagType, newName: string, newEmoji: string) => {
+        const trimmedName = newName.trim()
+        const trimmedEmoji = newEmoji.trim()
+
+        if (!trimmedName) return
+
+        // 1. Rename if needed
+        if (trimmedName !== tag.name) {
+            if (confirm(t('tags.renameConfirm', { old: tag.name, new: trimmedName }))) {
+                await renameTag(tag.id!, tag.name, trimmedName, tag.type)
+            } else {
+                // If user cancels rename, do we still update emoji? 
+                // Let's assume cancellation means "stop everything".
+                // But what if they only wanted to change emoji and accidentally changed name?
+                // For simplicity: confirm is only for rename.
+                // If rename cancelled, we abort.
+                setEditingTag(null)
+                return
+            }
         }
 
-        if (confirm(t('tags.renameConfirm', { old: oldName, new: newName }))) {
-            await renameTag(id, oldName, newName, type)
+        // 2. Update emoji if changed (and rename didn't fail/cancel)
+        // We re-update even if name changed because renameTag doesn't touch emoji.
+        if (trimmedEmoji !== (tag.emoji || "")) {
+            await updateTag(tag.id!, { emoji: trimmedEmoji })
         }
         setEditingTag(null)
     }
@@ -40,8 +58,9 @@ export function TagsScreen() {
     const handleAdd = async (type: 'place' | 'person') => {
         if (!newTagName.trim()) return
 
-        await addTag(newTagName.trim(), type)
+        await addTag(newTagName.trim(), type, newTagEmoji.trim())
         setNewTagName("")
+        setNewTagEmoji("")
         setIsAdding(null)
     }
 
@@ -76,16 +95,19 @@ export function TagsScreen() {
                             editingTag={editingTag}
                             onTypeEdit={(tag) => setEditingTag(tag)}
                             onCancelEdit={() => setEditingTag(null)}
-                            onConfirmEdit={handleRename}
+                            onConfirmEdit={handleUpdate}
                             onDelete={handleDelete}
                             isAdding={isAdding === 'place'}
                             onStartAdd={() => setIsAdding('place')}
                             onCancelAdd={() => {
                                 setIsAdding(null)
                                 setNewTagName("")
+                                setNewTagEmoji("")
                             }}
                             newTagName={newTagName}
                             onNewTagNameChange={setNewTagName}
+                            newTagEmoji={newTagEmoji}
+                            onNewTagEmojiChange={setNewTagEmoji}
                             onConfirmAdd={() => handleAdd('place')}
                         />
                     </TabsContent>
@@ -97,16 +119,19 @@ export function TagsScreen() {
                             editingTag={editingTag}
                             onTypeEdit={(tag) => setEditingTag(tag)}
                             onCancelEdit={() => setEditingTag(null)}
-                            onConfirmEdit={handleRename}
+                            onConfirmEdit={handleUpdate}
                             onDelete={handleDelete}
                             isAdding={isAdding === 'person'}
                             onStartAdd={() => setIsAdding('person')}
                             onCancelAdd={() => {
                                 setIsAdding(null)
                                 setNewTagName("")
+                                setNewTagEmoji("")
                             }}
                             newTagName={newTagName}
                             onNewTagNameChange={setNewTagName}
+                            newTagEmoji={newTagEmoji}
+                            onNewTagEmojiChange={setNewTagEmoji}
                             onConfirmAdd={() => handleAdd('person')}
                         />
                     </TabsContent>
@@ -122,18 +147,19 @@ interface TagListProps {
     editingTag: TagType | null
     onTypeEdit: (tag: TagType) => void
     onCancelEdit: () => void
-    onConfirmEdit: (id: number, oldName: string, newName: string, type: 'place' | 'person') => void
+    onConfirmEdit: (tag: TagType, newName: string, newEmoji: string) => void
     onDelete: (tag: TagType) => void
     isAdding: boolean
     onStartAdd: () => void
     onCancelAdd: () => void
     newTagName: string
     onNewTagNameChange: (val: string) => void
+    newTagEmoji: string
+    onNewTagEmojiChange: (val: string) => void
     onConfirmAdd: () => void
 }
 
 function TagList({
-    type,
     tags,
     editingTag,
     onTypeEdit,
@@ -145,6 +171,8 @@ function TagList({
     onCancelAdd,
     newTagName,
     onNewTagNameChange,
+    newTagEmoji,
+    onNewTagEmojiChange,
     onConfirmAdd
 }: TagListProps) {
     const { t } = useTranslation()
@@ -164,11 +192,18 @@ function TagList({
                 <Card className="border-primary/50">
                     <CardContent className="p-3 flex gap-2 items-center">
                         <Input
+                            className="w-12 h-9 p-1 text-center text-lg"
+                            placeholder="😀"
+                            value={newTagEmoji}
+                            onChange={(e) => onNewTagEmojiChange(e.target.value)}
+                            maxLength={2}
+                        />
+                        <Input
                             autoFocus
                             value={newTagName}
                             onChange={(e) => onNewTagNameChange(e.target.value)}
                             placeholder={t('tags.addPlaceholder')}
-                            className="h-9"
+                            className="h-9 flex-1"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') onConfirmAdd()
                                 if (e.key === 'Escape') onCancelAdd()
@@ -184,16 +219,24 @@ function TagList({
                 <Card key={tag.id} className="overflow-hidden">
                     <CardContent className="p-3 flex items-center justify-between gap-3">
                         {editingTag?.id === tag.id ? (
-                            <div className="flex-1 flex gap-2">
+                            <div className="flex-1 flex gap-2 items-center">
+                                <Input
+                                    id={`edit-tag-emoji-${tag.id}`}
+                                    className="w-12 h-8 p-1 text-center text-lg"
+                                    defaultValue={tag.emoji || ""}
+                                    placeholder="😀"
+                                    maxLength={2}
+                                />
                                 <Input
                                     autoFocus
                                     defaultValue={tag.name}
                                     id={`edit-tag-${tag.id}`}
-                                    className="h-8"
+                                    className="h-8 flex-1"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             const val = e.currentTarget.value
-                                            onConfirmEdit(tag.id!, tag.name, val, type)
+                                            const emojiInput = document.getElementById(`edit-tag-emoji-${tag.id}`) as HTMLInputElement
+                                            onConfirmEdit(tag, val, emojiInput.value)
                                         }
                                         if (e.key === 'Escape') onCancelEdit()
                                     }}
@@ -203,7 +246,8 @@ function TagList({
                                     className="h-8"
                                     onClick={() => {
                                         const input = document.getElementById(`edit-tag-${tag.id}`) as HTMLInputElement
-                                        onConfirmEdit(tag.id!, tag.name, input.value, type)
+                                        const emojiInput = document.getElementById(`edit-tag-emoji-${tag.id}`) as HTMLInputElement
+                                        onConfirmEdit(tag, input.value, emojiInput.value)
                                     }}
                                 >{t('common.save')}</Button>
                                 <Button size="sm" variant="ghost" className="h-8" onClick={onCancelEdit}><X className="h-4 w-4" /></Button>
@@ -211,7 +255,8 @@ function TagList({
                         ) : (
                             <>
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <Badge variant="secondary" className="text-sm px-2 py-1 truncate max-w-[200px]">
+                                    <Badge variant="secondary" className="text-sm px-2 py-1 truncate max-w-[200px] flex gap-1.5 items-center">
+                                        {tag.emoji && <span className="text-base leading-none">{tag.emoji}</span>}
                                         {tag.name}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
