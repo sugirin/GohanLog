@@ -15,6 +15,10 @@ import 'fake-indexeddb/auto';
     disconnect() { }
 };
 
+vi.mock('@/lib/i18n/LanguageContext', () => ({
+    useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 describe('HistoryScreen', () => {
     beforeEach(async () => {
         await db.delete();
