@@ -13,6 +13,7 @@ export interface Tag {
     id?: number;
     type: 'place' | 'person';
     name: string;
+    emoji?: string;
     lastUsed: string;
     count: number;
 }

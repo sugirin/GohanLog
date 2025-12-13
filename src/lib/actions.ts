@@ -189,23 +189,31 @@ export function useRecentLogs() {
 
 // Tag Management Actions
 
-export async function addTag(name: string, type: 'place' | 'person') {
+export async function addTag(name: string, type: 'place' | 'person', emoji?: string) {
     await db.transaction('rw', db.tags, async () => {
         const existingTag = await db.tags.where('[type+name]').equals([type, name]).first()
         if (existingTag) {
-            // Already exists, maybe ensure count is at least 0? 
-            // Usually we just ignore duplicates for manual add, or maybe notify user?
-            // For now, let's just do nothing if it exists.
+            // If tag exists but has no emoji and we are providing one, update it?
+            // For now, follow existing logic: do nothing if exists.
+            // But if we want to "set" emoji, we might want to update.
+            // Let's assume manual add means we might want to enforce this new tag.
+            // But usually addTag is "ensure exist".
+            // Let's leave as is for now, if user wants to add emoji to existing tag they should edit it.
             return;
         }
 
         await db.tags.add({
             type,
             name,
+            emoji,
             count: 0, // Manual add starts with 0 count
             lastUsed: format(new Date(), 'yyyy-MM-dd')
         })
     })
+}
+
+export async function updateTag(id: number, changes: { emoji?: string }) {
+    await db.tags.update(id, changes)
 }
 
 export async function deleteTag(id: number) {
