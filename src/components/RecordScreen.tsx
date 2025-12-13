@@ -58,7 +58,7 @@ export function RecordScreen() {
     const personTags = useLiveQuery(() => useTags('person')) || []
 
     // Frequent tags (top 5) - already sorted by frequency
-    const frequentPlaces = placeTags.slice(0, 5)
+    const frequentPlaces = placeTags
     // Show all people tags, sorted by frequency
     const allPeople = personTags
 
@@ -143,241 +143,229 @@ export function RecordScreen() {
         .slice(0, 5)
 
     return (
-        <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-0">
-            <div className="flex-1 flex flex-col p-0 gap-0 overflow-hidden">
-                <div className="flex items-center justify-between shrink-0">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                        GohanLog
-                    </h1>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className={cn(!date && "text-muted-foreground")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "MMM d") : <span>Date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={(d) => d && setDate(d)}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
+        <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-0 p-2 gap-2">
 
-                {/* Main Content Area - Compact Layout - No Scroll */}
-                <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-hidden pb-1">
+            {/* 1. Logo & Date: Ratio 1 */}
+            <div className="flex-[1] flex items-center justify-between shrink-0 min-h-0">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    GohanLog
+                </h1>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className={cn(!date && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "MMM d") : <span>Date</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={(d) => d && setDate(d)}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+            </div>
 
-                    {/* Top Section: Where and Who - Split 50:50 */}
-                    <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-hidden justify-center">
-                        {/* Where Section */}
-                        <div className="h-[38%] flex flex-col gap-1 overflow-hidden border rounded-lg p-1.5 bg-card/30">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center gap-1 text-muted-foreground w-14 shrink-0">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    <span className="text-xs font-medium">Where?</span>
-                                </div>
-                                <div className="relative flex-1">
-                                    <Input
-                                        value={place}
-                                        onChange={e => {
-                                            setPlace(e.target.value)
-                                            setShowPlaceSuggestions(true)
-                                        }}
-                                        onFocus={() => setShowPlaceSuggestions(true)}
-                                        onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
-                                        placeholder="Restaurant name"
-                                        className="text-sm h-7 px-2"
-                                    />
-                                    {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
-                                        <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1">
-                                            {filteredPlaceTags.map(tag => (
-                                                <div
-                                                    key={tag.id}
-                                                    className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
-                                                    onClick={() => {
-                                                        setPlace(tag.name)
-                                                        setShowPlaceSuggestions(false)
-                                                    }}
-                                                >
-                                                    {tag.name}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            {/* Quick Place Tags */}
-                            <div className="flex-1 overflow-y-auto content-start">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {frequentPlaces.map(tag => (
-                                        <Badge
-                                            key={tag.id}
-                                            variant={place === tag.name ? "default" : "outline"}
-                                            className={cn(
-                                                "cursor-pointer transition-colors text-xs py-0.5 px-2",
-                                                place === tag.name ? "" : "hover:bg-secondary"
-                                            )}
-                                            onClick={() => setPlace(tag.name)}
-                                        >
-                                            {tag.name}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Who Section */}
-                        <div className="h-[38%] flex flex-col gap-1 overflow-hidden border rounded-lg p-1.5 bg-card/30">
-                            <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center gap-1 text-muted-foreground w-16 shrink-0">
-                                    <Users className="h-3.5 w-3.5" />
-                                    <span className="text-xs font-medium">Who?</span>
-                                </div>
-                                <div className="flex-1">
-                                    <TagInput
-                                        label=""
-                                        placeholder="Add people..."
-                                        tags={people}
-                                        suggestions={personTags}
-                                        onTagsChange={setPeople}
-                                        hideTags={true}
-                                    />
-                                </div>
-                            </div>
-                            {/* All People Tags - Highlight selected */}
-                            <div className="flex-1 overflow-y-auto content-start">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {/* 新規追加されたがまだDBにないタグを表示（一時的） */}
-                                    {people.filter(p => !allPeople.find(ap => ap.name === p)).map(name => (
-                                        <Badge
-                                            key={name}
-                                            variant="default"
-                                            className="cursor-pointer hover:bg-primary/90 transition-colors text-xs py-0.5 px-2"
-                                            onClick={() => setPeople(people.filter(p => p !== name))}
-                                        >
-                                            {name}
-                                        </Badge>
-                                    ))}
-
-                                    {/* DBにある全タグを表示 */}
-                                    {allPeople.map(tag => {
-                                        const isSelected = people.includes(tag.name)
-                                        return (
-                                            <Badge
-                                                key={tag.id}
-                                                variant={isSelected ? "default" : "secondary"}
-                                                className={cn(
-                                                    "cursor-pointer transition-colors text-xs py-0.5 px-2",
-                                                    isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
-                                                )}
-                                                onClick={() => {
-                                                    if (isSelected) {
-                                                        setPeople(people.filter(p => p !== tag.name))
-                                                    } else {
-                                                        setPeople([...people, tag.name])
-                                                    }
-                                                }}
-                                            >
-                                                {tag.name}
-                                            </Badge>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </div>
+            {/* 2. Where Section: Ratio 3 */}
+            <div className="flex-3 flex flex-col gap-1 overflow-y-auto border rounded-lg p-2 pr-6 bg-card/30 min-h-0">
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+                        <MapPin className="h-5 w-5" />
+                        <span className="text-xs font-medium">Where?</span>
                     </div>
-
-                    {/* Bottom Section: Photos - No Label */}
-                    <div className="shrink-0 space-y-1 pt-1 border-t">
-                        {/* PWA警告メッセージ */}
-                        {isWeb() && (
-                            <div className="flex items-start gap-2 p-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-[10px]">
-                                <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
-                                <span className="text-yellow-800 dark:text-yellow-200">
-                                    Web版では写真が永続保存されない場合があります。
-                                </span>
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2">
-                            {isNativePlatform() ? (
-                                // ネイティブアプリ版
-                                <>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
-                                        onClick={handleNativeCamera}
-                                        disabled={isProcessingPhotos}
+                    <div className="relative flex-1">
+                        <Input
+                            value={place}
+                            onChange={e => {
+                                setPlace(e.target.value)
+                                setShowPlaceSuggestions(true)
+                            }}
+                            onFocus={() => setShowPlaceSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowPlaceSuggestions(false), 200)}
+                            placeholder="Restaurant name"
+                            className="text-sm h-7 px-2"
+                        />
+                        {showPlaceSuggestions && place && filteredPlaceTags.length > 0 && (
+                            <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1">
+                                {filteredPlaceTags.map(tag => (
+                                    <div
+                                        key={tag.id}
+                                        className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
+                                        onClick={() => {
+                                            setPlace(tag.name)
+                                            setShowPlaceSuggestions(false)
+                                        }}
                                     >
-                                        <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
-                                        <span className="text-[10px] font-medium">Camera</span>
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
-                                        onClick={handleNativeGallery}
-                                        disabled={isProcessingPhotos}
-                                    >
-                                        <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
-                                        <span className="text-[10px] font-medium">Gallery</span>
-                                    </Button>
-                                </>
-                            ) : (
-                                // Web版
-                                <>
-                                    <label className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
-                                        <span className="text-[10px] font-medium">Camera</span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            capture="environment"
-                                            className="hidden"
-                                            onChange={handlePhotoSelect}
-                                        />
-                                    </label>
-                                    <div className="relative flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
-                                        <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
-                                        <span className="text-[10px] font-medium">Album</span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            onChange={handlePhotoSelect}
-                                        />
+                                        {tag.name}
                                     </div>
-                                </>
-                            )}
-                        </div>
-
-                        {(images.length > 0 || isProcessingPhotos) && (
-                            <div className="flex gap-2 overflow-x-auto pb-1 h-14 items-center">
-                                {images.map((img, i) => (
-                                    <ImagePreview
-                                        key={i}
-                                        blob={img.thumbnail}
-                                        onRemove={() => handleRemovePhoto(i)}
-                                    />
                                 ))}
-                                {isProcessingPhotos && (
-                                    <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-muted rounded-lg">
-                                        <span className="text-xs text-muted-foreground animate-pulse">...</span>
-                                    </div>
-                                )}
                             </div>
                         )}
+                    </div>
+                </div>
+                {/* Quick Place Tags */}
+                <div className="flex-1 overflow-y-auto content-start">
+                    <div className="flex flex-wrap gap-1.5">
+                        {frequentPlaces.map(tag => (
+                            <Badge
+                                key={tag.id}
+                                variant={place === tag.name ? "default" : "outline"}
+                                className={cn(
+                                    "cursor-pointer transition-colors text-xs py-0.5 px-2",
+                                    place === tag.name ? "" : "hover:bg-secondary"
+                                )}
+                                onClick={() => setPlace(tag.name)}
+                            >
+                                {tag.name}
+                            </Badge>
+                        ))}
                     </div>
                 </div>
             </div>
 
+            {/* 3. Who Section: Ratio 3 */}
+            <div className="flex-3 flex flex-col gap-1 overflow-hidden border rounded-lg p-2 pr-6 bg-card/30 min-h-0">
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+                        <Users className="h-5 w-5" />
+                        <span className="text-xs font-medium">Who?</span>
+                    </div>
+                    <div className="relative flex-1">
+                        <TagInput
+                            label=""
+                            placeholder="Add people..."
+                            tags={people}
+                            suggestions={personTags}
+                            onTagsChange={setPeople}
+                            hideTags={true}
+                        />
+                    </div>
+                </div>
+                {/* All People Tags - Highlight selected */}
+                <div className="flex-1 overflow-y-auto content-start">
+                    <div className="flex flex-wrap gap-1.5">
+                        {people.filter(p => !allPeople.find(ap => ap.name === p)).map(name => (
+                            <Badge
+                                key={name}
+                                variant="default"
+                                className="cursor-pointer hover:bg-primary/90 transition-colors text-xs py-0.5 px-2"
+                                onClick={() => setPeople(people.filter(p => p !== name))}
+                            >
+                                {name}
+                            </Badge>
+                        ))}
+
+                        {allPeople.map(tag => {
+                            const isSelected = people.includes(tag.name)
+                            return (
+                                <Badge
+                                    key={tag.id}
+                                    variant={isSelected ? "default" : "secondary"}
+                                    className={cn(
+                                        "cursor-pointer transition-colors text-xs py-0.5 px-2",
+                                        isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
+                                    )}
+                                    onClick={() => {
+                                        if (isSelected) {
+                                            setPeople(people.filter(p => p !== tag.name))
+                                        } else {
+                                            setPeople([...people, tag.name])
+                                        }
+                                    }}
+                                >
+                                    {tag.name}
+                                </Badge>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* 4. Photos Section: Ratio 2 */}
+            <div className="flex-2 flex flex-col gap-1 min-h-0">
+                {/* PWA警告メッセージ */}
+                {isWeb() && (
+                    <div className="flex items-start gap-2 p-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-[10px] shrink-0">
+                        <AlertTriangle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
+                        <span className="text-yellow-800 dark:text-yellow-200">
+                            Web版では写真が永続保存されない場合があります。
+                        </span>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 shrink-0">
+                    {isNativePlatform() ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                onClick={handleNativeCamera}
+                                disabled={isProcessingPhotos}
+                            >
+                                <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
+                                <span className="text-[10px] font-medium">Camera</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95"
+                                onClick={handleNativeGallery}
+                                disabled={isProcessingPhotos}
+                            >
+                                <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
+                                <span className="text-[10px] font-medium">Gallery</span>
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <label className="flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                <Camera className="h-3.5 w-3.5 mb-0.5 text-primary" />
+                                <span className="text-[10px] font-medium">Camera</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                    onChange={handlePhotoSelect}
+                                />
+                            </label>
+                            <div className="relative flex flex-col items-center justify-center h-10 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors bg-muted/20 active:scale-95">
+                                <ImageIcon className="h-3.5 w-3.5 mb-0.5 text-primary" />
+                                <span className="text-[10px] font-medium">Album</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={handlePhotoSelect}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {(images.length > 0 || isProcessingPhotos) && (
+                    <div className="flex-1 flex gap-2 overflow-x-auto items-center min-h-0">
+                        {images.map((img, i) => (
+                            <ImagePreview
+                                key={i}
+                                blob={img.thumbnail}
+                                onRemove={() => handleRemovePhoto(i)}
+                            />
+                        ))}
+                        {isProcessingPhotos && (
+                            <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-muted rounded-lg">
+                                <span className="text-xs text-muted-foreground animate-pulse">...</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
             {/* Bottom Action */}
-            <div className="px-2 pt-2 pb-0 bg-background border-t shrink-0 flex gap-2">
+            <div className="px-2 pt-2 pb-0 bg-background border-t shrink-0 flex gap-2 flex-1">
                 <Button
                     variant="ghost"
                     className="flex-1 h-12 text-lg shadow-lg bg-destructive/10 text-destructive hover:bg-destructive/20"
@@ -395,7 +383,7 @@ export function RecordScreen() {
                     Clear All
                 </Button>
                 <Button
-                    className="flex-[2] h-12 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="flex-2 h-12 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={handleSubmit}
                     disabled={isSaving || !place || isProcessingPhotos}
                 >
@@ -403,6 +391,6 @@ export function RecordScreen() {
                     {isSaving ? "Saving..." : isProcessingPhotos ? "Processing..." : "Save Memory"}
                 </Button>
             </div>
-        </div>
+        </div >
     )
 }
