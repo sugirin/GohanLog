@@ -1,9 +1,10 @@
 import * as React from "react"
-import { Download, Upload, AlertTriangle, CheckCircle2, Trash2, Languages } from "lucide-react"
+import { Download, Upload, AlertTriangle, CheckCircle2, Trash2, Languages, Bug } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { exportData, importData } from "@/lib/backup"
 import { deleteAllLogs } from "@/lib/actions"
+import { exportDebugLog } from "@/lib/debug"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
 
@@ -158,6 +159,29 @@ export function SettingsScreen() {
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {t('settings.deleteAllButton')}
+                        </Button>
+                    </div>
+
+                    <div className="border-t pt-4 space-y-2">
+                        <h3 className="text-sm font-medium">Debug</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Export debug logs to help diagnose issues.
+                        </p>
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    await exportDebugLog()
+                                    setMessage({ type: 'success', text: 'Debug log exported' })
+                                } catch (e) {
+                                    console.error(e)
+                                    setMessage({ type: 'error', text: 'Failed to export debug log' })
+                                }
+                            }}
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                        >
+                            <Bug className="mr-2 h-4 w-4" />
+                            Export Debug Log
                         </Button>
                     </div>
 
