@@ -35,10 +35,6 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }
     const placeTags = useLiveQuery(() => useTags('place')) || []
     const personTags = useLiveQuery(() => useTags('person')) || []
 
-    // Frequent tags (top 5) - already sorted by frequency
-    const frequentPlaces = placeTags.slice(0, 5)
-    const frequentPeople = personTags.slice(0, 8)
-
     const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             setIsProcessingPhotos(true)
@@ -139,13 +135,14 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }
                                     {filteredPlaceTags.map(tag => (
                                         <div
                                             key={tag.id}
-                                            className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
+                                            className="px-4 py-2 hover:bg-muted cursor-pointer text-sm flex items-center gap-2"
                                             onClick={() => {
                                                 setPlace(tag.name)
                                                 setShowPlaceSuggestions(false)
                                             }}
                                         >
-                                            {tag.name}
+                                            {tag.emoji && <span>{tag.emoji}</span>}
+                                            <span>{tag.name}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -153,14 +150,18 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }
                         </div>
                         {/* Quick Place Tags - Scrollable if too many */}
                         <div className="flex-1 overflow-y-auto content-start">
-                            <div className="flex flex-wrap gap-2">
-                                {frequentPlaces.map(tag => (
+                            <div className="flex flex-wrap gap-1.5">
+                                {placeTags.map(tag => (
                                     <Badge
                                         key={tag.id}
-                                        variant="outline"
-                                        className="cursor-pointer hover:bg-secondary transition-colors"
+                                        variant={place === tag.name ? "default" : "outline"}
+                                        className={cn(
+                                            "cursor-pointer transition-colors text-xs py-0.5 px-2 flex items-center gap-1",
+                                            place === tag.name ? "" : "hover:bg-secondary"
+                                        )}
                                         onClick={() => setPlace(tag.name)}
                                     >
+                                        {tag.emoji && <span>{tag.emoji}</span>}
                                         {tag.name}
                                     </Badge>
                                 ))}
@@ -181,23 +182,46 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }
                                 tags={people}
                                 suggestions={personTags}
                                 onTagsChange={setPeople}
+                                hideTags={true}
                             />
                         </div>
-                        {/* Quick People Tags - Scrollable */}
+                        {/* All People Tags - Scrollable */}
                         <div className="flex-1 overflow-y-auto content-start">
-                            <div className="flex flex-wrap gap-2">
-                                {frequentPeople
-                                    .filter(p => !people.includes(p.name))
-                                    .map(tag => (
+                            <div className="flex flex-wrap gap-1.5">
+                                {people.filter(p => !personTags.find(ap => ap.name === p)).map(name => (
+                                    <Badge
+                                        key={name}
+                                        variant="default"
+                                        className="cursor-pointer hover:bg-primary/90 transition-colors text-xs py-0.5 px-2"
+                                        onClick={() => setPeople(people.filter(p => p !== name))}
+                                    >
+                                        {name}
+                                    </Badge>
+                                ))}
+
+                                {personTags.map(tag => {
+                                    const isSelected = people.includes(tag.name)
+                                    return (
                                         <Badge
                                             key={tag.id}
-                                            variant="secondary"
-                                            className="cursor-pointer hover:bg-primary/20 transition-colors"
-                                            onClick={() => setPeople([...people, tag.name])}
+                                            variant={isSelected ? "default" : "secondary"}
+                                            className={cn(
+                                                "cursor-pointer transition-colors text-xs py-0.5 px-2 flex items-center gap-1",
+                                                isSelected ? "hover:bg-primary/90" : "hover:bg-primary/20"
+                                            )}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setPeople(people.filter(p => p !== tag.name))
+                                                } else {
+                                                    setPeople([...people, tag.name])
+                                                }
+                                            }}
                                         >
-                                            + {tag.name}
+                                            {tag.emoji && <span>{tag.emoji}</span>}
+                                            {tag.name}
                                         </Badge>
-                                    ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>
