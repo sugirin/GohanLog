@@ -74,6 +74,7 @@ export const translations = {
             noTags: 'タグがありません',
             renameConfirm: 'タグ「{old}」を「{new}」に変更しますか？\nこれまでの記録もすべて更新されます。',
             deleteConfirm: 'タグ「{name}」を削除しますか？\n(過去の記録からテキストは消えませんが、サジェストに表示されなくなります)',
+            filterByThis: '「{name}」で履歴を絞り込む',
         },
         common: {
             cancel: 'キャンセル',
@@ -154,6 +155,7 @@ export const translations = {
             noTags: 'No tags yet',
             renameConfirm: 'Rename tag "{old}" to "{new}"?\nAll past records will also be updated.',
             deleteConfirm: 'Delete tag "{name}"?\n(Text in past records will remain, but it will no longer appear in suggestions)',
+            filterByThis: 'Filter history by "{name}"',
         },
         common: {
             cancel: 'Cancel',

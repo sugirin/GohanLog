@@ -11,11 +11,31 @@ import { updateLog, deleteLog } from "@/lib/actions"
 import { LogForm } from "./LogForm"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
 
-export function HistoryScreen() {
+interface HistoryScreenProps {
+    /**
+     * 他画面（タグ画面など）から流し込みたいフィルタ。
+     * 設定された軸（place / person）のみを採用し、未指定の軸はクリアする。
+     * 検索ワードもクリアする（=「タップしたタグだけが効いた状態」になる）。
+     */
+    pendingFilter?: { place?: string; person?: string } | null
+    /** pendingFilter を適用し終えたら、親に「もう食べた」と教えるためのコールバック */
+    onFilterApplied?: () => void
+}
+
+export function HistoryScreen({ pendingFilter, onFilterApplied }: HistoryScreenProps = {}) {
     const { t } = useTranslation()
     const [searchQuery, setSearchQuery] = React.useState("")
     const [activePerson, setActivePerson] = React.useState<string | null>(null)
     const [activePlace, setActivePlace] = React.useState<string | null>(null)
+
+    // 親から外部フィルタが渡ってきたら、検索条件をリセットしたうえで適用する。
+    React.useEffect(() => {
+        if (!pendingFilter) return
+        setSearchQuery("")
+        setActivePlace(pendingFilter.place ?? null)
+        setActivePerson(pendingFilter.person ?? null)
+        onFilterApplied?.()
+    }, [pendingFilter, onFilterApplied])
 
     const allTags = useLiveQuery(() => db.tags.toArray()) || []
     const getTagEmoji = (name: string, type: 'place' | 'person') => {

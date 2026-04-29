@@ -11,7 +11,26 @@ import { useTags, addTag, deleteTag, renameTag, updateTag } from "@/lib/actions"
 import type { Tag as TagType } from "@/lib/db"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
 
-export function TagsScreen() {
+interface TagsScreenProps {
+    /**
+     * タグのバッジがタップされたら呼ばれる。タグの type に合わせて
+     * place か person のいずれかをセットしたフィルタオブジェクトを渡す。
+     * 親側で履歴画面への遷移とフィルタ流し込みを行う前提。
+     */
+    onSelectTag?: (filter: { place?: string; person?: string }) => void
+}
+
+/**
+ * タグを「履歴フィルタ」の形に変換する純関数。
+ * テストしやすいように handleSelectTag の中身から切り出している。
+ */
+export function tagToHistoryFilter(
+    tag: Pick<TagType, 'type' | 'name'>
+): { place?: string; person?: string } {
+    return tag.type === 'place' ? { place: tag.name } : { person: tag.name }
+}
+
+export function TagsScreen({ onSelectTag }: TagsScreenProps = {}) {
     const { t } = useTranslation()
     const places = useLiveQuery(() => useTags('place')) || []
     const people = useLiveQuery(() => useTags('person')) || []
@@ -19,6 +38,11 @@ export function TagsScreen() {
     const [newTagName, setNewTagName] = React.useState("")
     const [newTagEmoji, setNewTagEmoji] = React.useState("")
     const [isAdding, setIsAdding] = React.useState<'place' | 'person' | null>(null)
+
+    const handleSelectTag = (tag: TagType) => {
+        if (!onSelectTag) return
+        onSelectTag(tagToHistoryFilter(tag))
+    }
 
     const handleUpdate = async (tag: TagType, newName: string, newEmoji: string) => {
         const trimmedName = newName.trim()
@@ -97,6 +121,7 @@ export function TagsScreen() {
                             onCancelEdit={() => setEditingTag(null)}
                             onConfirmEdit={handleUpdate}
                             onDelete={handleDelete}
+                            onSelect={onSelectTag ? handleSelectTag : undefined}
                             isAdding={isAdding === 'place'}
                             onStartAdd={() => setIsAdding('place')}
                             onCancelAdd={() => {
@@ -121,6 +146,7 @@ export function TagsScreen() {
                             onCancelEdit={() => setEditingTag(null)}
                             onConfirmEdit={handleUpdate}
                             onDelete={handleDelete}
+                            onSelect={onSelectTag ? handleSelectTag : undefined}
                             isAdding={isAdding === 'person'}
                             onStartAdd={() => setIsAdding('person')}
                             onCancelAdd={() => {
@@ -149,6 +175,8 @@ interface TagListProps {
     onCancelEdit: () => void
     onConfirmEdit: (tag: TagType, newName: string, newEmoji: string) => void
     onDelete: (tag: TagType) => void
+    /** バッジがタップされたときに親へ通知する。未指定ならバッジは tap 不可。 */
+    onSelect?: (tag: TagType) => void
     isAdding: boolean
     onStartAdd: () => void
     onCancelAdd: () => void
@@ -166,6 +194,7 @@ function TagList({
     onCancelEdit,
     onConfirmEdit,
     onDelete,
+    onSelect,
     isAdding,
     onStartAdd,
     onCancelAdd,
@@ -255,10 +284,24 @@ function TagList({
                         ) : (
                             <>
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <Badge variant="secondary" className="text-sm px-2 py-1 truncate max-w-[200px] flex gap-1.5 items-center">
-                                        {tag.emoji && <span className="text-base leading-none">{tag.emoji}</span>}
-                                        {tag.name}
-                                    </Badge>
+                                    {onSelect ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelect(tag)}
+                                            aria-label={t('tags.filterByThis', { name: tag.name })}
+                                            className="bg-transparent border-0 p-0 m-0 overflow-hidden cursor-pointer focus:outline-none focus-visible:outline-none"
+                                        >
+                                            <Badge variant="secondary" className="text-sm px-2 py-1 truncate max-w-[200px] flex gap-1.5 items-center">
+                                                {tag.emoji && <span className="text-base leading-none">{tag.emoji}</span>}
+                                                {tag.name}
+                                            </Badge>
+                                        </button>
+                                    ) : (
+                                        <Badge variant="secondary" className="text-sm px-2 py-1 truncate max-w-[200px] flex gap-1.5 items-center">
+                                            {tag.emoji && <span className="text-base leading-none">{tag.emoji}</span>}
+                                            {tag.name}
+                                        </Badge>
+                                    )}
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                                         {tag.count}
                                     </span>

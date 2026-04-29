@@ -7,9 +7,17 @@ import { Button } from './components/ui/button'
 import { History, PlusCircle, Settings, Tag } from 'lucide-react'
 import { LanguageProvider, useTranslation } from './lib/i18n/LanguageContext'
 
+type HistoryFilter = { place?: string; person?: string }
+
 function AppContent() {
   const [view, setView] = useState<'record' | 'history' | 'settings' | 'tags'>('record')
+  const [pendingHistoryFilter, setPendingHistoryFilter] = useState<HistoryFilter | null>(null)
   const { t } = useTranslation()
+
+  const handleSelectTagFromTags = (filter: HistoryFilter) => {
+    setPendingHistoryFilter(filter)
+    setView('history')
+  }
 
   return (
     <div className="h-full w-full bg-background text-foreground overflow-hidden">
@@ -17,9 +25,12 @@ function AppContent() {
         {view === 'record' ? (
           <RecordScreen />
         ) : view === 'history' ? (
-          <HistoryScreen />
+          <HistoryScreen
+            pendingFilter={pendingHistoryFilter}
+            onFilterApplied={() => setPendingHistoryFilter(null)}
+          />
         ) : view === 'tags' ? (
-          <TagsScreen />
+          <TagsScreen onSelectTag={handleSelectTagFromTags} />
         ) : (
           <SettingsScreen />
         )}
