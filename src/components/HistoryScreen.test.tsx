@@ -56,4 +56,68 @@ describe('HistoryScreen', () => {
         expect(images[0]).toHaveAttribute('src', 'blob:mock-url');
         expect(images[1]).toHaveAttribute('src', 'blob:mock-url');
     });
+
+    describe('pendingFilter prop', () => {
+        beforeEach(async () => {
+            // 場所と人物が異なる 3 件のログを用意
+            await db.logs.bulkAdd([
+                { date: '2023-03-01', place: 'Pizza Place', people: ['Friend A'] },
+                { date: '2023-03-02', place: 'Sushi Bar', people: ['Friend B'] },
+                { date: '2023-03-03', place: 'Pizza Place', people: ['Friend C'] },
+            ]);
+        });
+
+        it('place を渡すと、その place のログだけが表示され、onFilterApplied が呼ばれる', async () => {
+            const onFilterApplied = vi.fn();
+
+            render(
+                <HistoryScreen
+                    pendingFilter={{ place: 'Pizza Place' }}
+                    onFilterApplied={onFilterApplied}
+                />
+            );
+
+            // Pizza Place のログ（2件）が表示される
+            await waitFor(() => {
+                expect(screen.getAllByText('Pizza Place').length).toBeGreaterThan(0);
+            });
+
+            // Sushi Bar は表示されない
+            expect(screen.queryByText('Sushi Bar')).not.toBeInTheDocument();
+
+            // 親に「適用済み」を通知している
+            expect(onFilterApplied).toHaveBeenCalled();
+        });
+
+        it('person を渡すと、その人を含むログだけが表示される', async () => {
+            const onFilterApplied = vi.fn();
+
+            render(
+                <HistoryScreen
+                    pendingFilter={{ person: 'Friend B' }}
+                    onFilterApplied={onFilterApplied}
+                />
+            );
+
+            // 初期描画では一瞬全件出る → useEffect でフィルタ適用 → useLiveQuery 再評価
+            // という順なので、「Sushi Bar が残り、他の人物は消える」状態が安定するまで待つ
+            await waitFor(() => {
+                expect(screen.getByText('Sushi Bar')).toBeInTheDocument();
+                expect(screen.queryByText('Friend A')).not.toBeInTheDocument();
+                expect(screen.queryByText('Friend C')).not.toBeInTheDocument();
+            });
+
+            expect(onFilterApplied).toHaveBeenCalled();
+        });
+
+        it('pendingFilter なしの場合は全件表示される', async () => {
+            render(<HistoryScreen />);
+
+            await waitFor(() => {
+                expect(screen.getByText('Sushi Bar')).toBeInTheDocument();
+            });
+
+            expect(screen.getAllByText('Pizza Place').length).toBe(2);
+        });
+    });
 });
