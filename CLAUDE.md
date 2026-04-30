@@ -66,6 +66,7 @@ iOS への反映は **`build:mobile` → `cap:sync` → Xcode で Run** が定�
 
 - `PROJECT_OVERVIEW.md` — プロジェクト全体像（機能・データモデル・技術スタック・経緯・設計上のポイント）
 - `docs/feature-backlog.md` — 機能アイデア・要望の集約
+- `docs/RELEASE.md` — PWA / iOS のリリース手順（バージョンの上げ方・タグ・リリースノート追記）
 - `docs/SETUP_MOBILE.md` — Capacitor / iOS ビルド手順
 - `docs/TROUBLESHOOTING_XCODE.md` — Xcode でハマったときの対処
 - `docs/WORKTREE.md` — Git worktree の運用方針（hotfix／リリース確認用に限定）
