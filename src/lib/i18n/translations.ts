@@ -80,6 +80,11 @@ export const translations = {
             cancel: 'キャンセル',
             close: '閉じる',
             save: '保存',
+        },
+        releaseNotes: {
+            title: 'アップデート情報',
+            versionLabel: 'バージョン {version}',
+            closeButton: '閉じる',
         }
     },
     en: {
@@ -161,6 +166,11 @@ export const translations = {
             cancel: 'Cancel',
             close: 'Close',
             save: 'Save',
+        },
+        releaseNotes: {
+            title: "What's New",
+            versionLabel: 'Version {version}',
+            closeButton: 'Close',
         }
     }
 };

@@ -1,18 +1,42 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RecordScreen } from './components/RecordScreen'
 import { HistoryScreen } from './components/HistoryScreen'
 import { SettingsScreen } from './components/SettingsScreen'
 import { TagsScreen } from './components/TagsScreen'
+import { ReleaseNotesDialog } from './components/ReleaseNotesDialog'
 import { Button } from './components/ui/button'
 import { History, PlusCircle, Settings, Tag } from 'lucide-react'
 import { LanguageProvider, useTranslation } from './lib/i18n/LanguageContext'
+import {
+  getPendingReleaseNote,
+  markReleaseNoteSeen,
+  type ReleaseNote,
+} from './lib/releaseNotes'
 
 type HistoryFilter = { place?: string; person?: string }
 
 function AppContent() {
   const [view, setView] = useState<'record' | 'history' | 'settings' | 'tags'>('record')
   const [pendingHistoryFilter, setPendingHistoryFilter] = useState<HistoryFilter | null>(null)
+  const [pendingReleaseNote, setPendingReleaseNote] = useState<ReleaseNote | null>(null)
   const { t } = useTranslation()
+
+  // 起動時に一度だけ：アップデート後ならリリースノートを出す。
+  // lastSeenVersion が未保存なら getPendingReleaseNote 内でサイレントに記録される。
+  useEffect(() => {
+    const note = getPendingReleaseNote(__APP_VERSION__)
+    if (note) {
+      // 起動時に一度だけ判定する性質上、ここでの setState はマウント直後の
+      // 一回限りで cascading rerender にはならないため許容する。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPendingReleaseNote(note)
+    }
+  }, [])
+
+  const handleCloseReleaseNotes = () => {
+    markReleaseNoteSeen(__APP_VERSION__)
+    setPendingReleaseNote(null)
+  }
 
   const handleSelectTagFromTags = (filter: HistoryFilter) => {
     setPendingHistoryFilter(filter)
@@ -71,6 +95,13 @@ function AppContent() {
           <span className="text-xs">{t('nav.settings')}</span>
         </Button>
       </nav>
+
+      {pendingReleaseNote && (
+        <ReleaseNotesDialog
+          note={pendingReleaseNote}
+          onClose={handleCloseReleaseNotes}
+        />
+      )}
     </div>
   )
 }
