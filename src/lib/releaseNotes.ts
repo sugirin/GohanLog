@@ -16,9 +16,27 @@ export interface ReleaseNote {
 /**
  * バージョンごとのリリースノート。
  * 1.0.0 はリリースノート機能導入前の初期リリースなのでエントリ無し（既存ユーザーへの通知は行わない）。
- * 次バージョン以降の変更点はここに追記する。
+ * 新しいバージョンを出すときは配列の先頭にエントリを追加する。
  */
-export const releaseNotes: ReleaseNote[] = [];
+export const releaseNotes: ReleaseNote[] = [
+    {
+        version: '1.1.0',
+        ja: {
+            title: 'GohanLog 1.1.0',
+            bullets: [
+                'タグ画面でタグのバッジをタップすると、そのタグで絞り込まれた履歴画面に移動できるようになりました。',
+                'アップデート後に変更点をお知らせするダイアログを追加しました（このダイアログがその第一弾です）。',
+            ],
+        },
+        en: {
+            title: 'GohanLog 1.1.0',
+            bullets: [
+                'Tap a tag badge in the Tags screen to jump to History filtered by that tag.',
+                "Added an update dialog that shows what's new on first launch after an update (this is the first one!).",
+            ],
+        },
+    },
+];
 
 export function findReleaseNote(version: string): ReleaseNote | undefined {
     return releaseNotes.find((note) => note.version === version);
