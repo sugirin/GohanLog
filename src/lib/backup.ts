@@ -1,4 +1,5 @@
 import { db, type Log, type Tag } from './db';
+import { blobToBase64 } from './imageUtils';
 
 interface BackupData {
     version: number;
@@ -7,23 +8,22 @@ interface BackupData {
     tags: Tag[];
 }
 
-// Helper to convert Blob to Base64
-const blobToBase64 = (blob: Blob | string): Promise<string> => {
-    if (typeof blob === 'string') {
-        return Promise.resolve(blob);
-    }
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-};
+// 写真は Base64 文字列（data URL）に揃える。すでに文字列ならそのまま。
+const toBase64 = (image: Blob | string): Promise<string> =>
+    typeof image === 'string' ? Promise.resolve(image) : blobToBase64(image);
 
-// Helper to convert Base64 to Blob
-const base64ToBlob = async (base64: string): Promise<Blob> => {
-    const res = await fetch(base64);
-    return res.blob();
+// バックアップ内の写真は data URL 文字列のみ受け付ける。
+// 不正な値（オブジェクト等）をそのまま保存すると表示時にクラッシュするため、
+// 1 つでも混ざっていれば復元全体を中止する（写真とサムネイルの順序ずれも防ぐ）。
+const isDataUrl = (value: unknown): value is string =>
+    typeof value === 'string' && value.startsWith('data:');
+
+const validateImages = (images: unknown): string[] => {
+    if (images === undefined || images === null) return [];
+    if (!Array.isArray(images) || !images.every(isDataUrl)) {
+        throw new Error('Invalid photo data in backup file');
+    }
+    return images;
 };
 
 export async function exportData(): Promise<void> {
@@ -34,10 +34,10 @@ export async function exportData(): Promise<void> {
         // Convert Blobs in logs to Base64
         const processedLogs = await Promise.all(logs.map(async (log) => {
             const photos = log.photos
-                ? await Promise.all(log.photos.map(blobToBase64))
+                ? await Promise.all(log.photos.map(toBase64))
                 : [];
             const thumbnails = log.thumbnails
-                ? await Promise.all(log.thumbnails.map(blobToBase64))
+                ? await Promise.all(log.thumbnails.map(toBase64))
                 : [];
 
             return {
@@ -99,20 +99,13 @@ export async function importData(file: File): Promise<void> {
             throw new Error('Invalid backup file format');
         }
 
-        // Convert Base64 back to Blobs
-        const processedLogs = await Promise.all(backup.logs.map(async (log) => {
-            const photos = log.photos
-                ? await Promise.all(log.photos.map(base64ToBlob))
-                : [];
-            const thumbnails = log.thumbnails
-                ? await Promise.all(log.thumbnails.map(base64ToBlob))
-                : [];
-
-            return {
-                ...log,
-                photos,
-                thumbnails
-            } as Log;
+        // 写真は Base64 文字列のまま保存する（Blob に戻さない）。
+        // iOS / Android の WebView では IndexedDB に入れた Blob が後から読めなくなることがあるため、
+        // saveLog / updateLog と同じく文字列で永続化する。表示側は Blob / string の両方に対応済み。
+        const processedLogs: Log[] = backup.logs.map((log) => ({
+            ...log,
+            photos: validateImages(log.photos),
+            thumbnails: validateImages(log.thumbnails),
         }));
 
         await db.transaction('rw', db.logs, db.tags, async () => {
