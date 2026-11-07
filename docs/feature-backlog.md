@@ -91,3 +91,24 @@
     - Capacitor は同じ Web ビルドを土台にするため、React/Vite のコード自体は残す（「廃止」の対象はブラウザ向けの公開＝GitHub Pages / PWA のみ）。
     - **留意点**: 既存の PWA 利用者は公開停止すると端末内 IndexedDB のデータにアクセスできなくなる。個人アプリのため許容だが、必要ならバックアップ（設定画面の JSON エクスポート）案内や事前アナウンスを検討。
     - **残タスク**: 実際の GitHub Pages 非公開化（`gh-pages` ブランチ削除／リポジトリ Pages 設定 OFF）は手動。`public/pwa-192x192.png` / `pwa-512x512.png` など PWA 専用アセットは不要になったため整理可能（今回は未削除）。
+
+## 8. 写真の Base64 変換の共通化と保存形式の統一（リファクタ）
+
+- **機能名・概要**: 「Blob | string → Base64」の変換を `imageUtils.ts` の共通関数に集約し、写真の保存形式のルールを 1 つに揃える。あわせて画像プレビューの object URL リークを解消する。
+- **ステータス**: 未着手
+- **やり取りした内容の概要**:
+  - 2026-11-07: hotfix（`hotfix/photo-persistence`）のコードレビュー指摘から登録。hotfix とは切り離して後で対応する方針。
+    - **変換処理の重複**: `actions.ts` の `saveLog / updateLog` に `p instanceof Blob ? await blobToBase64(p) : p` が 4 箇所、`backup.ts` に `toBase64` がある。次に変換ロジックを直すとき（読めない Blob の扱い等）に修正漏れで写真消失バグが再発しうる。`toBase64(image)` / `normalizeImages(arr)` を `imageUtils.ts` に置いて全経路から使う。
+    - **保存形式の不統一**: 復元（`importData`）は常に Base64 文字列で保存する一方、`saveLog / updateLog` はネイティブ時のみ Base64 化する。ネイティブの実経路はどちらも文字列なので実害はないが、「常に Base64」か「ネイティブのみ」のどちらかに統一する。
+    - **object URL リーク**: `LogForm.tsx` のプレビューと `HistoryScreen.tsx` の `getImageSrc` が描画のたびに `URL.createObjectURL` を呼び、`revokeObjectURL` していない。memo 化してエフェクトのクリーンアップで解放する。軽微。
+
+## 9. バックアップ／復元の堅牢化
+
+- **機能名・概要**: エクスポートが一部の写真の読み込み失敗で全体失敗しないようにし、復元時の上書き・タグ不整合を解消する。
+- **ステータス**: 未着手
+- **やり取りした内容の概要**:
+  - 2026-11-07: hotfix（`hotfix/photo-persistence`）のコードレビュー指摘から登録。
+    - **エクスポートの全体失敗**: `exportData` は写真 1 枚でも読めない Blob があると `Promise.all` ごと失敗し、バックアップ全体が取れない。写真消失バグの被害ユーザーほどテキスト記録すら退避できなくなる。画像単位で catch してスキップ（または欠損として記録）する。
+    - **復元時の上書き**: `importData` は `bulkPut` でログを元 id のまま書き込むため、復元先に同じ id のログがあると黙って上書きされる。
+    - **タグの不整合**: タグも `bulkPut` で id 基準のまま入れるため、同じ `[type+name]` で別 id のタグが重複しうる。`count` / `lastUsed` も再計算されず、CLAUDE.md の整合性ルールから外れる。復元後にログからタグを再集計する、または `[type+name]` でマージする方式を検討。
+    - **関連（今回は対応しない）**: 過去の復元で Blob のまま保存された写真を Base64 に直す修復処理は、2026-11-07 に「省略」と判断済み。
