@@ -27,8 +27,10 @@ export function LogForm({ initialData, onSave, onCancel, onDelete, submitLabel }
     const [date, setDate] = React.useState<Date>(initialData ? new Date(initialData.date) : new Date())
     const [place, setPlace] = React.useState(initialData?.place || "")
     const [people, setPeople] = React.useState<string[]>(initialData?.people || [])
-    const [photos, setPhotos] = React.useState<(Blob | string)[]>(initialData?.photos?.filter(p => p instanceof Blob) as Blob[] || [])
-    const [thumbnails, setThumbnails] = React.useState<(Blob | string)[]>(initialData?.thumbnails?.filter(t => t instanceof Blob) as Blob[] || [])
+    // ネイティブでは写真が Base64 文字列で保存されているため、Blob / string の両方をそのまま引き継ぐ。
+    // （Blob だけに絞ると、編集・保存したときに既存の写真が消えてしまう）
+    const [photos, setPhotos] = React.useState<(Blob | string)[]>(initialData?.photos ?? [])
+    const [thumbnails, setThumbnails] = React.useState<(Blob | string)[]>(initialData?.thumbnails ?? [])
     const [isSaving, setIsSaving] = React.useState(false)
     const [isProcessingPhotos, setIsProcessingPhotos] = React.useState(false)
 
