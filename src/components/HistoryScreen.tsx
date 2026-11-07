@@ -90,7 +90,7 @@ export function HistoryScreen({ pendingFilter, onFilterApplied }: HistoryScreenP
                     <div className="flex items-center gap-2 border rounded-md px-3 bg-background">
                         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                         <Input
-                            placeholder="Search place or people..."
+                            placeholder={t('history.searchPlaceholder')}
                             className="border-0 focus-visible:ring-0 px-0 h-9"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
