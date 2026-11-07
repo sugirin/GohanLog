@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTags, addTag, deleteTag, renameTag, updateTag } from "@/lib/actions"
 import type { Tag as TagType } from "@/lib/db"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
+import { useBackHandler } from "@/lib/backButton"
 
 interface TagsScreenProps {
     /**
@@ -79,6 +80,16 @@ export function TagsScreen({ onSelectTag }: TagsScreenProps = {}) {
         }
     }
 
+    const handleCancelAdd = () => {
+        setIsAdding(null)
+        setNewTagName("")
+        setNewTagEmoji("")
+    }
+
+    // Android の戻るボタンでタグの編集／追加を取り消す
+    useBackHandler(editingTag !== null, () => setEditingTag(null))
+    useBackHandler(isAdding !== null, handleCancelAdd)
+
     const handleAdd = async (type: 'place' | 'person') => {
         if (!newTagName.trim()) return
 
@@ -124,11 +135,7 @@ export function TagsScreen({ onSelectTag }: TagsScreenProps = {}) {
                             onSelect={onSelectTag ? handleSelectTag : undefined}
                             isAdding={isAdding === 'place'}
                             onStartAdd={() => setIsAdding('place')}
-                            onCancelAdd={() => {
-                                setIsAdding(null)
-                                setNewTagName("")
-                                setNewTagEmoji("")
-                            }}
+                            onCancelAdd={handleCancelAdd}
                             newTagName={newTagName}
                             onNewTagNameChange={setNewTagName}
                             newTagEmoji={newTagEmoji}
@@ -149,11 +156,7 @@ export function TagsScreen({ onSelectTag }: TagsScreenProps = {}) {
                             onSelect={onSelectTag ? handleSelectTag : undefined}
                             isAdding={isAdding === 'person'}
                             onStartAdd={() => setIsAdding('person')}
-                            onCancelAdd={() => {
-                                setIsAdding(null)
-                                setNewTagName("")
-                                setNewTagEmoji("")
-                            }}
+                            onCancelAdd={handleCancelAdd}
                             newTagName={newTagName}
                             onNewTagNameChange={setNewTagName}
                             newTagEmoji={newTagEmoji}

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { HistoryScreen } from './HistoryScreen';
 import { db } from '@/lib/db';
+import { resetBackHandlersForTest, runBackHandler } from '@/lib/backButton';
 import 'fake-indexeddb/auto';
 
 // Mock URL.createObjectURL
@@ -23,6 +24,7 @@ describe('HistoryScreen', () => {
     beforeEach(async () => {
         await db.delete();
         await db.open();
+        resetBackHandlersForTest();
     });
 
     it('should display multiple thumbnails for a log', async () => {
@@ -55,6 +57,33 @@ describe('HistoryScreen', () => {
 
         expect(images[0]).toHaveAttribute('src', 'blob:mock-url');
         expect(images[1]).toHaveAttribute('src', 'blob:mock-url');
+    });
+
+    it('戻るボタンで写真プレビューを閉じる', async () => {
+        const thumb = new Blob(['thumb'], { type: 'image/jpeg' });
+        const photo = new Blob(['photo'], { type: 'image/jpeg' });
+        await db.logs.add({
+            date: '2023-02-01',
+            place: 'Preview Cafe',
+            people: [],
+            photos: [photo],
+            thumbnails: [thumb],
+        });
+
+        render(<HistoryScreen />);
+        await waitFor(() => {
+            expect(screen.getByText('Preview Cafe')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByAltText(/Preview Cafe/));
+        expect(screen.getByAltText('Full size')).toBeInTheDocument();
+
+        act(() => {
+            expect(runBackHandler()).toBe(true);
+        });
+        expect(screen.queryByAltText('Full size')).not.toBeInTheDocument();
+        // 閉じたあとは登録が外れている
+        expect(runBackHandler()).toBe(false);
     });
 
     describe('pendingFilter prop', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RecordScreen } from './components/RecordScreen'
 import { HistoryScreen } from './components/HistoryScreen'
 import { SettingsScreen } from './components/SettingsScreen'
@@ -12,14 +12,31 @@ import {
   markReleaseNoteSeen,
   type ReleaseNote,
 } from './lib/releaseNotes'
+import { setupAndroidBackButton, useBackHandler } from './lib/backButton'
 
 type HistoryFilter = { place?: string; person?: string }
+type View = 'record' | 'history' | 'settings' | 'tags'
 
 function AppContent() {
-  const [view, setView] = useState<'record' | 'history' | 'settings' | 'tags'>('record')
+  const [view, setView] = useState<View>('record')
   const [pendingHistoryFilter, setPendingHistoryFilter] = useState<HistoryFilter | null>(null)
   const [pendingReleaseNote, setPendingReleaseNote] = useState<ReleaseNote | null>(null)
   const { t } = useTranslation()
+
+  // Android の戻るボタン：開いているモーダルが無ければ、記録画面以外では記録画面へ戻る。
+  // 記録画面で押されたらアプリを最小化する（setupAndroidBackButton 側の既定動作）。
+  const viewRef = useRef<View>(view)
+  useEffect(() => {
+    viewRef.current = view
+  }, [view])
+
+  useEffect(() => {
+    return setupAndroidBackButton(() => {
+      if (viewRef.current === 'record') return false
+      setView('record')
+      return true
+    })
+  }, [])
 
   // 起動時に一度だけ：アップデート後ならリリースノートを出す。
   // lastSeenVersion が未保存なら getPendingReleaseNote 内でサイレントに記録される。
@@ -37,6 +54,7 @@ function AppContent() {
     markReleaseNoteSeen(__APP_VERSION__)
     setPendingReleaseNote(null)
   }
+  useBackHandler(pendingReleaseNote !== null, handleCloseReleaseNotes)
 
   const handleSelectTagFromTags = (filter: HistoryFilter) => {
     setPendingHistoryFilter(filter)

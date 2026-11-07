@@ -10,6 +10,7 @@ import { db, type Log } from "@/lib/db"
 import { updateLog, deleteLog } from "@/lib/actions"
 import { LogForm } from "./LogForm"
 import { useTranslation } from "@/lib/i18n/LanguageContext"
+import { useBackHandler } from "@/lib/backButton"
 
 interface HistoryScreenProps {
     /**
@@ -68,6 +69,10 @@ export function HistoryScreen({ pendingFilter, onFilterApplied }: HistoryScreenP
 
     const [selectedPhoto, setSelectedPhoto] = React.useState<Blob | string | null>(null)
     const [editingLog, setEditingLog] = React.useState<Log | null>(null)
+
+    // Android の戻るボタンで写真プレビュー／編集モーダルを閉じる
+    useBackHandler(selectedPhoto !== null, () => setSelectedPhoto(null))
+    useBackHandler(editingLog !== null, () => setEditingLog(null))
 
     // Helper to get image source from Blob or Base64 string
     const getImageSrc = (image: Blob | string) => {
