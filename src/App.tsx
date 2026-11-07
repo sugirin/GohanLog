@@ -78,8 +78,8 @@ function AppContent() {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-2 right-2 h-12 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex justify-around items-center z-50 safe-area-pb">
+      {/* Bottom Navigation（モーダルは z-50 なので、ナビは z-40 にしてモーダルの下に回す） */}
+      <nav className="fixed bottom-0 left-2 right-2 h-12 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex justify-around items-center z-40 safe-area-pb">
         <Button
           variant={view === 'record' ? 'default' : 'ghost'}
           onClick={() => setView('record')}
