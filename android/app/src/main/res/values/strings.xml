@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GohanLog</string>
+    <string name="title_activity_main">GohanLog</string>
+    <string name="package_name">com.sugirin.gohanlog</string>
+    <string name="custom_url_scheme">com.sugirin.gohanlog</string>
+</resources>
