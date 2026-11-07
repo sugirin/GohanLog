@@ -62,3 +62,32 @@
     - **再表示動線**: 今回スコープ外（必要になればチケットを別に切る）。
     - **リリースノート本文の管理**: `src/lib/releaseNotes.ts` の `releaseNotes` 配列に version / ja / en で追記する形。1.0.0 はリリースノート機能導入前の初期版なのでエントリ無し（既存ユーザーへの通知なし）。次バージョン以降の変更点はここに追記する。
     - **テスト**: `src/lib/releaseNotes.test.ts`（10件）と `src/components/ReleaseNotesDialog.test.tsx`（4件）を追加。判定ロジックの主要ケースとダイアログの基本表示を網羅。
+
+## 6. Android 対応
+
+- **機能名・概要**: Capacitor で Android アプリを追加し、iOS と同一コードから Android も配信できるようにする。
+- **ステータス**: 進行中
+- **やり取りした内容の概要**:
+  - 2026-07-02: Android 開発に着手。コード／プロジェクト側のセットアップを実施。
+    - `@capacitor/android@^7.6.2` を追加し、`npx cap add android` で `android/` を生成。`appId: com.sugirin.gohanlog`、`app_name: GohanLog`、`@capacitor/camera` の Gradle 配線済み。`android/app/build.gradle` は `versionName 1.1.1` / `versionCode 1`。
+    - SDK は `minSdk 23` / `compileSdk・targetSdk 35`（Capacitor 7 要件）。ビルドには **JDK 21・Android Studio Ladybug (2024.2.1) 以降**が必要。
+    - npm スクリプトに `cap:open:android` / `cap:run:android` を追加。
+    - **残タスク**: ユーザー側で Android Studio / JDK を導入 → 実機・エミュレータで動作確認。撮影・ギャラリー選択の実機検証。ネイティブ Base64 保存（`isNativePlatform()` 経路）が Android WebView でも正しく永続化されるか確認。**Google Play 配信（署名鍵 keystore・Play Console 登録・AAB 提出）は後回し**（`docs/RELEASE.md` にプレースホルダを記載）。
+
+  - 2026-11-07: Android 対応の続き（コード側）。
+    - **カメラ権限の見直し**: インストール済み `@capacitor/camera` 7.0.5 の README とマニフェストを確認した結果、Android では権限宣言が不要（撮影は `IMAGE_CAPTURE` Intent、ギャラリーは Photo Picker）。`saveToGallery` 未使用のため権限は追加しない。`CAMERA` を宣言すると逆に実行時許可が必要になるため宣言しない方針。`docs/SETUP_MOBILE.md` の誤記（「`CAMERA` / `READ_MEDIA_IMAGES` をマージする」）を修正。
+    - **Android 15 の edge-to-edge 対策**: `targetSdk 35` で Android 15 端末は edge-to-edge が強制され、画面上下がシステムバーに隠れる。`capacitor.config.ts` に `android.adjustMarginsForEdgeToEdge: 'auto'` を追加（Capacitor 7.1+ のオプション。Android 15 時のみマージン付与。iOS には影響なし）。
+    - **写真まわりの hotfix**: `hotfix/photo-persistence`（編集保存で写真が消える／復元で Blob 保存）の修正は Android にも同じく必要。`main` へマージ後、このブランチに取り込む。
+    - **未対応（要判断）**: Android の戻るボタン（下記 10）、カメラ起動中にアプリが OS に終了された場合の写真の取りこぼし（`appRestoredResult`）。どちらも `@capacitor/app` の追加が必要。
+    - **残タスク（変わらず）**: Android Studio / JDK 21 の導入 → エミュレータ（API 35 / Android 15 推奨）と実機で、撮影・ギャラリー選択・Base64 永続化・画面上下の余白を確認。
+
+## 7. Web 版（GitHub Pages / PWA）の廃止
+
+- **機能名・概要**: 旧 Web 版の公開を廃止し、ネイティブ（iOS / Android）専用構成へ寄せる。
+- **ステータス**: 進行中（コード上の撤去は完了。実際の Pages 非公開化は運用作業として別途）
+- **やり取りした内容の概要**:
+  - 2026-07-02: 「Android を優先し、Web 版は廃止してよい」という方針を確認。コード側の撤去を実施。
+    - `vite-plugin-pwa` と `gh-pages` を依存から削除。`vite` の `base` を `/GohanLog/` → `./` に変更。`deploy` / `predeploy` スクリプトを削除。
+    - Capacitor は同じ Web ビルドを土台にするため、React/Vite のコード自体は残す（「廃止」の対象はブラウザ向けの公開＝GitHub Pages / PWA のみ）。
+    - **留意点**: 既存の PWA 利用者は公開停止すると端末内 IndexedDB のデータにアクセスできなくなる。個人アプリのため許容だが、必要ならバックアップ（設定画面の JSON エクスポート）案内や事前アナウンスを検討。
+    - **残タスク**: 実際の GitHub Pages 非公開化（`gh-pages` ブランチ削除／リポジトリ Pages 設定 OFF）は手動。`public/pwa-192x192.png` / `pwa-512x512.png` など PWA 専用アセットは不要になったため整理可能（今回は未削除）。

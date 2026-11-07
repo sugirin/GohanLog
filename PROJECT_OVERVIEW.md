@@ -7,17 +7,17 @@
 
 ## 1. プロジェクトの位置づけ（重要）
 
-プロジェクト設定では「iOSアプリの開発」となっていますが、コードを読んだ限り**純粋なネイティブiOSアプリ（Swift / SwiftUI）ではありません**。実態は次の二段構えです。
+このプロジェクトは**純粋なネイティブアプリ（Swift / SwiftUI / Kotlin）ではありません**。実態は次の構成です。
 
-1. **本体は React + TypeScript + Vite で作られた Webアプリ（PWA）**
-   - すでに公開中：<https://sugirin.github.io/GohanLog/>
-   - GitHub Pages にホスティングされ、Safari で開いて「ホーム画面に追加」して使う運用が前提。
-2. **iOS ネイティブアプリ化は Capacitor で対応**
+1. **本体は React + TypeScript + Vite で作られた Web アプリ**
+   - この Web コードがそのままネイティブアプリの中身になる。
+   - **旧 Web 版（GitHub Pages / PWA）は廃止**。ネイティブ専用構成へ移行し、`vite` の `base` は `./`、`vite-plugin-pwa` も撤去済み（`npm run dev` のブラウザ表示は開発用途のみ）。
+2. **ネイティブアプリ化は Capacitor で対応（iOS / Android）**
    - `capacitor.config.ts` の `appId: 'com.sugirin.gohanlog'`
-   - `ios/` 配下に Xcode プロジェクトが生成済み（`ios/App/App.xcodeproj`）
-   - 同じWebコードをWebViewでラップしてネイティブアプリとしてビルドできる構成
+   - `ios/` に Xcode プロジェクト、`android/` に Gradle プロジェクトを生成済み。
+   - 同じ Web コードを WebView でラップしてネイティブアプリとしてビルドする構成。
 
-つまり「iOSアプリ」と言っても、Swift で書き直すというより「Capacitor 経由で App Store 配信できる形を整えていく」プロジェクトとして読むのが自然です。もしSwiftによるネイティブ書き換えを意図しているのであれば、別途方針確認が必要です（後述「不明点」参照）。
+つまり Swift / Kotlin で書き直すのではなく「Capacitor 経由で App Store / Google Play に配信できる形を整えていく」プロジェクトです。iOS は配信中、Android は開発着手済み（手順は `docs/SETUP_MOBILE.md`）。
 
 ---
 
@@ -94,7 +94,7 @@ GohanLog/
 ├── プロンプト下書き                 すぎりんさんが実際にAIに渡したプロンプトの履歴
 ├── package.json                     Vite + React 19 + TS + Capacitor + Dexie
 ├── capacitor.config.ts              appId: com.sugirin.gohanlog
-├── vite.config.ts                   base: '/GohanLog/' / vite-plugin-pwa
+├── vite.config.ts                   base: './'（ネイティブ専用。旧 PWA 構成は撤去済み）
 ├── index.html                       M PLUS Rounded 1c フォントを Google Fonts から読み込み
 ├── tailwind.config.js / postcss.config.js
 ├── eslint.config.js / tsconfig*.json / vitest.config.ts
@@ -134,7 +134,8 @@ GohanLog/
 ├── docs/
 │   ├── SETUP_MOBILE.md              iOSビルド手順（Capacitor）
 │   └── TROUBLESHOOTING_XCODE.md     Xcodeエラー対処
-├── dist/                            ビルド成果物（GitHub Pages 配信用）
+├── dist/                            ビルド成果物（cap sync で iOS/Android へ同期）
+├── android/                         Capacitor が生成した Gradle プロジェクト
 ├── dev-dist/                        PWA dev用
 └── node_modules/                    依存（Sharp 等が大量にあるが無視可）
 ```
@@ -147,17 +148,17 @@ GohanLog/
 | --- | --- | --- |
 | UIフレームワーク | React 19 | `useLiveQuery`（Dexie React Hooks）でDBの変更を即時反映 |
 | 言語 | TypeScript ~5.9 | `tsc -b && vite build` で型チェック |
-| ビルド | Vite 7 | `base: '/GohanLog/'`（GitHub Pages用） |
+| ビルド | Vite 7 | `base: './'`（ネイティブ専用。旧 GitHub Pages 用の `/GohanLog/` は廃止） |
 | スタイル | Tailwind CSS v4 + tailwindcss-animate | `@/components/ui` は shadcn/ui ベース |
 | アイコン | lucide-react | |
 | ルーティング | なし（`useState` で view を切り替え） | SPA 4画面 |
 | 永続化 | Dexie.js（IndexedDB） | `dexie-react-hooks` |
-| PWA | vite-plugin-pwa（autoUpdate） | オフライン動作・ホーム画面追加 |
-| ネイティブ化 | Capacitor 7（@capacitor/core, ios, camera） | iOS だけ追加済み（Androidは未追加） |
+| PWA | （廃止） | 旧 Web 版で使用。`vite-plugin-pwa` は撤去済み |
+| ネイティブ化 | Capacitor 7（@capacitor/core, ios, android, camera） | iOS / Android 追加済み |
 | 国際化 | 自前 Context（ja / en） | localStorage で永続化 |
 | テスト | Vitest + Testing Library + fake-indexeddb + jsdom | RecordScreen / HistoryScreen / actions / db のテストあり |
 | Lint | ESLint 9 + typescript-eslint + react-hooks | |
-| デプロイ | gh-pages（`npm run deploy`） | リポジトリの gh-pages ブランチへ |
+| 配信 | App Store（iOS・配信中） / Google Play（Android・準備中） | 旧 gh-pages デプロイは廃止 |
 
 ---
 
@@ -167,12 +168,13 @@ GohanLog/
 | --- | --- |
 | `npm run dev` | 開発サーバー（PC ローカル） |
 | `npm run dev:host` | 同じ Wi-Fi の iPhone から接続するためにホスト公開 |
-| `npm run build` | 本番ビルド（base = `/GohanLog/`） |
-| `npm run build:mobile` | Capacitor 用ビルド（base = `./`） |
+| `npm run build` | ビルド（base = `./`） |
+| `npm run build:mobile` | Capacitor 用ビルド（base = `./`、tsc 付き） |
 | `npm run preview` / `preview:host` | dist のローカル確認 |
-| `npm run cap:sync` | dist → iOSプロジェクトへ反映 |
+| `npm run cap:sync` | dist → iOS / Android プロジェクトへ反映 |
 | `npm run cap:open:ios` | Xcode を開く |
-| `npm run deploy` | GitHub Pages へデプロイ（事前に `predeploy` で build） |
+| `npm run cap:open:android` | Android Studio を開く |
+| `npm run cap:run:android` | Android を実機/エミュレータで実行 |
 | `npm run lint` | ESLint |
 
 ---
@@ -207,9 +209,9 @@ i18n 基盤 → Settings に言語選択 → 画面のローカライズ → Tag
 
 すぎりんさんに確認した結果、以下の方針が確定しています。
 
-- **構成**：現在の **PWA（GitHub Pages） + Capacitor（iOS）** の二段構えを維持。Swift によるネイティブ書き換えはしない。
-- **iOS**：すでに **App Store で配信中**。ストア提出系のタスクではなく、運用とアップデートのフェーズ。
-- **Android**：**将来的に対応予定**。`npx cap add android` での追加と、PC/iOS 共通動作の検証が今後の仕事になる。
+- **構成**：**Capacitor によるネイティブ（iOS / Android）専用**構成へ移行。旧 Web 版（GitHub Pages / PWA）は廃止。Swift / Kotlin によるネイティブ書き換えはしない。
+- **iOS**：すでに **App Store で配信中**。運用とアップデートのフェーズ。
+- **Android**：**開発着手済み**（2026-07-02〜）。`android/` 追加・Camera 配線済み。実機/エミュレータでの動作確認と Google Play 配信準備が今後の仕事（`docs/feature-backlog.md` の項目 6・7 参照）。
 
 ---
 
@@ -234,8 +236,8 @@ i18n 基盤 → Settings に言語選択 → 画面のローカライズ → Tag
 
 すでに App Store 配信中ということを踏まえると、次のような切り口が現実的です。
 
-- **Android 対応の準備**：`npx cap add android` の実行、Camera プラグインの動作確認、`build:mobile` の Android 検証、Play Console の準備
+- **Android 対応**：`android/` 追加済み。次は実機/エミュレータでの動作確認、Camera 権限の実機検証、Google Play 配信準備（`docs/feature-backlog.md` 項目 6）
 - **アップデート時のリグレッション対策**：`TagsScreen` / `SettingsScreen` / `backup.ts` のテスト追加
-- **PWA / iOS 共通の改善**：オフラインフォント、Web警告の i18n、Service Worker のキャッシュ戦略
-- **運用効率化**：GitHub Actions による自動デプロイ、`feature/*` ブランチの掃除
+- **ネイティブ共通の改善**：オフラインフォント、開発時ブラウザ警告の i18n
+- **運用効率化**：`feature/*` ブランチの掃除
 - **次の機能追加**：ユーザーから出ている要望があればここに積む

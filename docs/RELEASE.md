@@ -1,16 +1,22 @@
 # GohanLog リリース手順
 
-PWA（GitHub Pages）と iOS（App Store）の二系統に向けてリリースするときの手順をまとめる。
-両方を同時に出すのが基本。片方だけのリリースなら該当ステップだけ実施する。
+**iOS（App Store）** と **Android（Google Play）** の 2 系統に向けてリリースするときの手順をまとめる。
+旧 Web 版（GitHub Pages / PWA）は廃止したため、PWA デプロイ手順は無くなった。
+
+> **Android について**: `android/` プロジェクトは追加済みでローカルビルドは可能。Google Play への配信（署名鍵・Play Console 登録・AAB 提出）はまだ整備しておらず、本ドキュメントでは概要のみ記載する（詳細は Play 配信に着手する際に追記）。
 
 ## バージョニング方針
 
-- セマンティックバージョニングに従う（`MAJOR.MINOR.PATCH`）。
-  - 新機能の追加: MINOR を上げる（例: `1.0.0` → `1.1.0`）
-  - バグ修正・小さな調整: PATCH を上げる（例: `1.1.0` → `1.1.1`）
-  - 互換性を壊す変更: MAJOR を上げる
-- **同一リリースでは `package.json` と iOS（`MARKETING_VERSION`）を同じ値に揃える**。リリースノート機能のバージョン判定（`__APP_VERSION__`）は `package.json` の値を埋め込むため、ここがズレるとアプリ内通知のバージョン表示と App Store 上の表示が一致しなくなる。
-- iOS の `CURRENT_PROJECT_VERSION`（ビルド番号）は **App Store に出すたびに必ずインクリメント**する。同じ MARKETING_VERSION のままでも、提出ごとに別のビルド番号が必要。
+- セマンティックバージョニング（`MAJOR.MINOR.PATCH`）。
+  - 新機能: MINOR、バグ修正: PATCH、破壊的変更: MAJOR。
+- **同一リリースでは以下を同じバージョンに揃える**:
+  - `package.json` の `version`
+  - iOS `MARKETING_VERSION`
+  - Android `versionName`（`android/app/build.gradle`）
+  - リリースノートのバージョン判定（`__APP_VERSION__`）は `package.json` の値を埋め込むため、ここがズレるとアプリ内通知とストア表示が食い違う。
+- **提出ごとに必ずインクリメントするビルド番号**:
+  - iOS `CURRENT_PROJECT_VERSION`
+  - Android `versionCode`（`android/app/build.gradle`）
 
 ## 事前チェック
 
@@ -22,81 +28,43 @@ git pull
 npm install
 npm run lint
 npx vitest run
-npm run build              # base = /GohanLog/ で本番ビルドが通るか
-npm run build:mobile       # base = ./ でモバイル向けビルドが通るか
+npm run build:mobile       # base = ./ でネイティブ向けビルドが通るか
 ```
 
-`npm run lint` の既存エラーは事前から残っているもの（`react-hooks/set-state-in-effect` 等）。新しいエラーが**増えていない**ことだけ確認する。
+`npm run lint` の既存エラー（`react-hooks/set-state-in-effect` 等）は元からあるもの。新しいエラーが**増えていない**ことだけ確認する。
 
 ## 1. バージョンを上げる
 
-### 1-1. `package.json` を更新
+### 1-1. `package.json`
 
 ```bash
-# 例: 1.0.0 → 1.1.0
-npm version 1.1.0 --no-git-tag-version
+# 例: 1.1.1 → 1.2.0
+npm version 1.2.0 --no-git-tag-version
 ```
 
-`--no-git-tag-version` を付けると、コミットとタグは作らずに `package.json` だけを書き換える（タグはこの手順の最後に手動で切る）。
+### 1-2. iOS
 
-### 1-2. iOS のバージョンを更新
-
-`ios/App/App.xcodeproj/project.pbxproj` を編集する（または Xcode の General > Identity から GUI で更新）。
-
+`ios/App/App.xcodeproj/project.pbxproj`（または Xcode の General > Identity）:
 - `MARKETING_VERSION` を `package.json` と同じ値に。
-- `CURRENT_PROJECT_VERSION` を必ずインクリメント（前回 `1` なら `2`）。
+- `CURRENT_PROJECT_VERSION` を必ずインクリメント。
+- Debug / Release 両方に同じ値を入れる。
 
-両方とも Debug / Release 両ビルド設定に出てくるので、**どちらも同じ値に揃える**。
+### 1-3. Android
 
-### 1-3. リリースノートを追記
+`android/app/build.gradle` の `defaultConfig`:
+- `versionName` を `package.json` と同じ値に。
+- `versionCode` を必ずインクリメント（前回 `1` なら `2`）。
 
-`src/lib/releaseNotes.ts` の `releaseNotes` 配列の **先頭** に新しいエントリを追加する。
+### 1-4. リリースノートを追記
 
-```ts
-export const releaseNotes: ReleaseNote[] = [
-  {
-    version: '1.1.0',
-    ja: {
-      title: '新機能を追加しました',
-      bullets: [
-        '◯◯機能を追加',
-        '△△の表示を改善',
-      ],
-    },
-    en: {
-      title: 'New features',
-      bullets: [
-        'Added ◯◯',
-        'Improved △△ display',
-      ],
-    },
-  },
-  // 旧バージョンのノートは下に残す（過去履歴として）
-];
-```
-
-i18n は ja / en どちらも必ず埋める。空のリリース（リリースノート不要なバグ修正のみなど）は配列に追加しなくてよい。その場合、アップデートしても通知ダイアログは出ず、`lastSeenVersion` だけサイレントに進む。
+`src/lib/releaseNotes.ts` の `releaseNotes` 配列の **先頭** に新エントリを追加。ja / en 両方を必ず埋める。
+空のリリース（ノート不要なバグ修正のみ）は追加しなくてよい（ダイアログは出ず `lastSeenVersion` だけサイレントに進む）。
 
 ## 2. コミット
 
-`git-commit-organizer` Skill を使ってコミットを組む。例：
+`git-commit-organizer` Skill でコミットを組む。例: `chore(release): 1.2.0`
 
-```
-chore(release): 1.1.0
-```
-
-メッセージ本文に変更点の概要を書いておくと後で見返しやすい。
-
-## 3. PWA リリース（GitHub Pages）
-
-```bash
-npm run deploy
-```
-
-これは内部で `npm run build`（base=/GohanLog/）を走らせてから `gh-pages -d dist` で `gh-pages` ブランチに push する。
-完了後、`https://sugirin.github.io/GohanLog/` で動作確認。アップデート後初回起動時にリリースノートダイアログが出れば成功。
-
-## 4. iOS リリース（App Store）
+## 3. iOS リリース（App Store）
 
 ```bash
 npm run build:mobile       # base = ./ でビルド
@@ -104,52 +72,67 @@ npm run cap:sync           # dist を ios/ に反映
 npm run cap:open:ios       # Xcode を開く
 ```
 
-Xcode で：
+Xcode で:
+1. **Product > Archive**
+2. Organizer から **Distribute App > App Store Connect > Upload**
+3. App Store Connect で TestFlight 配布、または審査提出
 
-1. **Product > Archive** でアーカイブを作成。
-2. Organizer から **Distribute App > App Store Connect > Upload**。
-3. App Store Connect で TestFlight 配布、または直接審査提出。
+`CURRENT_PROJECT_VERSION` を上げ忘れると App Store Connect 側でエラーになる。
 
-ビルド番号 (`CURRENT_PROJECT_VERSION`) を上げ忘れていると App Store Connect 側でエラーになる。
+## 4. Android リリース（Google Play・準備中）
+
+ローカルビルド／実機確認まではこの手順:
+
+```bash
+npm run build:mobile       # base = ./ でビルド
+npm run cap:sync           # dist を android/ に反映
+npm run cap:open:android   # Android Studio を開く
+```
+
+Google Play 配信に着手する際に整備が必要な事項（未対応）:
+- **署名鍵（keystore）** の作成と安全な保管、`android/app/build.gradle` の signingConfig 設定
+- **リリース AAB** の生成（Android Studio: Build > Generate Signed Bundle / APK）
+- **Google Play Console** でのアプリ登録・ストア掲載情報・プライバシー等の入力
+- `versionCode` の運用ルール確定
+
+これらに着手したら本セクションを手順として具体化する。
 
 ## 5. タグを切る
 
-PWA／iOS どちらか（あるいは両方）のリリースが完了したら、**実際にリリースした内容のコミット**にタグを付ける。
+実際にリリースした内容のコミットにタグを付ける。
 
 ```bash
-git tag -a v1.1.0 -m "v1.1.0
+git tag -a v1.2.0 -m "v1.2.0
 
 主な変更点:
-- ◯◯機能を追加
-- △△の表示を改善
+- ◯◯を追加
 "
-git push origin v1.1.0
+git push origin v1.2.0
 ```
 
-タグは `v` プレフィックス付きで `vMAJOR.MINOR.PATCH`。アノテートタグ（`-a`）にしてリリースノート要点を本文に残す。
+`v` プレフィックス付きアノテートタグ。
 
 ## 6. リリース後の動作確認
 
-- PWA: ブラウザで開いて、起動時にリリースノートダイアログが出ること、`localStorage` の `gohanlog.lastSeenVersion` が新バージョンに更新されること。
-- iOS: TestFlight で実機にインストールし、同様にリリースノートダイアログが出ること。
+- iOS: TestFlight で実機インストールし、初回起動時にリリースノートダイアログが出ること。
+- Android（配信時）: 内部テストトラック等で同様に確認。
 
-`localStorage` を消して再現確認する場合は、Safari の開発者ツールやアプリの再インストールが必要。
+`localStorage` の `gohanlog.lastSeenVersion` が新バージョンに更新されることも確認。再現には端末側のアプリ再インストールが必要。
 
 ## チェックリスト
 
 - [ ] `npm run lint` で新しいエラーが増えていない
 - [ ] `npx vitest run` 全件通過
-- [ ] `npm run build` 通過
 - [ ] `npm run build:mobile` 通過
 - [ ] `package.json` の version を更新
-- [ ] iOS `MARKETING_VERSION` を `package.json` と同じ値に
-- [ ] iOS `CURRENT_PROJECT_VERSION` をインクリメント
+- [ ] iOS `MARKETING_VERSION` を揃える／`CURRENT_PROJECT_VERSION` をインクリメント
+- [ ] Android `versionName` を揃える／`versionCode` をインクリメント（Play 配信時）
 - [ ] `src/lib/releaseNotes.ts` にエントリ追加（必要な場合）
 - [ ] `chore(release): X.Y.Z` でコミット（git-commit-organizer 経由）
-- [ ] PWA: `npm run deploy`
 - [ ] iOS: `build:mobile` → `cap:sync` → Xcode で Archive → Upload
+- [ ] Android（配信時）: `build:mobile` → `cap:sync` → Android Studio で Signed Bundle
 - [ ] `git tag -a vX.Y.Z` でタグを切って push
-- [ ] PWA / iOS どちらでもリリースノートダイアログが出ることを確認
+- [ ] リリースノートダイアログが出ることを確認
 
 ## 関連ファイル
 
@@ -157,3 +140,4 @@ git push origin v1.1.0
 - `vite.config.ts` — `__APP_VERSION__` の埋め込み
 - `package.json` — `version` フィールド
 - `ios/App/App.xcodeproj/project.pbxproj` — iOS バージョン
+- `android/app/build.gradle` — Android `versionName` / `versionCode`
