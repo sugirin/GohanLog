@@ -20,7 +20,7 @@ GohanLog は React + TypeScript + Vite で作った Web アプリを **Capacitor
 
 ### Android 開発（Capacitor 7 の要件）
 - **Android Studio** Ladybug (2024.2.1) 以降
-- **JDK 21**（Android Studio 同梱の JDK でも可）
+- **JDK 21**（`brew install --cask temurin@21` など。**Android Studio 2026.x 同梱の JDK は 25 で、Gradle 8.11.1 が動かない**ので使わない）
 - **Android SDK**: `compileSdk` / `targetSdk = 35`、`minSdk = 23`
 - 実機 または エミュレータ（AVD）
 - **Google Play Console** アカウント（配信時のみ。ローカルビルドには不要）
@@ -94,10 +94,27 @@ npm run cap:open:android   # または npx cap open android
 `targetSdk 35` では Android 15 端末で edge-to-edge 表示が強制され、WebView がステータスバー／ナビゲーションバーの下に潜り込む。
 `capacitor.config.ts` の `android.adjustMarginsForEdgeToEdge: 'auto'` で、Android 15 のときだけ Capacitor がシステムバー分の余白を付ける。設定変更後は `npm run cap:sync` で反映する。
 
+### Android のアイコン・起動画面
+元画像は `assets/android/`（`assets/splash.png` の白いロゴをオレンジの背景に載せ直したもの）。作り直すときは:
+
+```bash
+node scripts/make-android-assets.mjs                               # assets/android/ を作る
+npx @capacitor/assets generate --android --assetPath assets/android
+git checkout android/app/src/main/AndroidManifest.xml              # ツールが整形だけ書き換えるので戻す
+```
+
+`assets/icon.png` は白い余白付きの iOS 向けアイコンで、そのまま Android のアダプティブアイコンにすると「アイコンの中にアイコン」になるため使わない。
+
 ### エミュレータ／実機で実行
 1. AVD（例: Pixel, API 35）を作成、または実機を USB デバッグ接続
 2. Android Studio の **Run**（▶）
 3. カメラは実機での確認を推奨
+
+コマンドラインからエミュレータを起動する場合は `-gpu host` を付ける。付けないとソフトウェア描画（SwiftShader）になり、Photo Picker などのシステムアプリが「応答なし」になるほど遅くなる:
+
+```bash
+~/Library/Android/sdk/emulator/emulator -avd <AVD 名> -gpu host
+```
 
 コマンドラインからも実行できる:
 
@@ -139,7 +156,8 @@ Xcode で **Product > Clean Build Folder**。
 
 ### Android
 - Gradle Sync 失敗 → **File > Invalidate Caches / Restart**、JDK 21 / SDK 35 を確認
-- どうしても直らない → `rm -rf android && npx cap add android && npm run cap:sync` で再生成
+- `Unsupported class file major version 69` → Gradle が JDK 25 で動いている。Gradle JDK を 21 にする（コマンドラインなら `JAVA_HOME=$(/usr/libexec/java_home -v 21)`）
+- どうしても直らない → `rm -rf android && npx cap add android && npm run cap:sync` で再生成（再生成後は下記「Android のアイコン・起動画面」の生成と、`res/values/styles.xml` / `colors.xml` のライトテーマ設定をやり直す）
 - 権限が効かない → 端末設定でアプリ権限を確認、アプリ再インストールでダイアログをリセット
 
 ### 共通

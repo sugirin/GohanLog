@@ -90,6 +90,21 @@
     - **写真まわりの hotfix**: `hotfix/photo-persistence`（編集保存で写真が消える／復元で Blob 保存）の修正は Android にも同じく必要。`main` へマージ後、このブランチに取り込む。
     - **未対応（要判断）**: Android の戻るボタン（下記 10）、カメラ起動中にアプリが OS に終了された場合の写真の取りこぼし（`appRestoredResult`）。どちらも `@capacitor/app` の追加が必要。
     - **残タスク（変わらず）**: Android Studio / JDK 21 の導入 → エミュレータ（API 35 / Android 15 推奨）と実機で、撮影・ギャラリー選択・Base64 永続化・画面上下の余白を確認。
+  - 2026-11-07: Android Studio（2026.2）を導入。同梱の JDK は 25 で、`android/` の Gradle 8.11.1（Capacitor 7 の既定）は JDK 25 では動かない（`Unsupported class file major version 69`）。JDK 21 を別途入れ、Android Studio の Gradle JDK に指定する必要がある。SDK は API 37 のみ導入済み（`compileSdk 35` の分はビルド時に自動ダウンロードされる想定）。エミュレータ `Medium_Phone_API_37.0` は作成済み。
+  - 2026-11-07: JDK 21（Temurin 21.0.13）を導入し、`assembleDebug` が成功。エミュレータ（API 37 / Android 17）で動作確認した。
+    - **OK**: 起動・画面表示、画面上下がシステムバーに隠れない（edge-to-edge 対策が効いている）、ギャラリーからの写真選択（Photo Picker。権限ダイアログなし）、保存、**アプリを強制終了→再起動しても写真付きの記録が残る**（Base64 保存が Android WebView で機能）、写真プレビュー・編集モーダル。
+    - **未確認**: カメラ撮影（実機で確認する）、Android 15（API 35）での余白（確認したのは API 37）。
+    - **見つかった問題**:
+      - ステータスバーのアイコン（時計・電池）が白で、明るい背景の上でほぼ見えない。`styles.xml` のテーマで明るい背景用の黒アイコン（`windowLightStatusBar`）にする必要がある。
+      - アプリアイコンと起動画面が Capacitor の初期画像のまま。`npx @capacitor/assets generate --android` で `assets/icon.png` / `splash.png` から作る。
+      - 履歴の編集モーダルの下部（キャンセル・更新ボタン）がボトムナビに一部隠れる。ナビとモーダルが同じ `z-50` で、DOM で後にあるナビが上に来るため。iOS でも同じ CSS なので共通の問題の可能性あり。
+      - 履歴の検索欄のプレースホルダ `Search place or people...` が英語ベタ書き（i18n 漏れ）。
+    - **エミュレータの注意**: コマンドラインから起動するとソフトウェア描画（SwiftShader）になり、システムアプリの「応答なし」が頻発する。`emulator -avd <名前> -gpu host` で起動するか、Android Studio の Device Manager から起動する。
+    - **上記 4 件を修正（同日）**、エミュレータで確認済み:
+      - ステータスバー: `styles.xml` の `AppTheme.NoActionBar` を `Theme.AppCompat.Light.NoActionBar` に固定し、`windowLightStatusBar` / `windowLightNavigationBar` で黒アイコンに。余白部分の色は `colors.xml` の `app_background`（Web 側の背景色 #FFFCED）。
+      - アイコン・起動画面: `scripts/make-android-assets.mjs` で `assets/android/` に元画像を作り、`@capacitor/assets` で生成。手順は `docs/SETUP_MOBILE.md`。
+      - 編集モーダルとボトムナビの重なり: ナビを `z-40` に下げた（モーダルは `z-50`）。iOS でも同じ修正が効く。
+      - 検索欄のプレースホルダ: `history.searchPlaceholder` を ja / en に追加。
 
 ## 7. Web 版（GitHub Pages / PWA）の廃止
 
@@ -126,7 +141,14 @@
 ## 10. Android の戻るボタン（ハードウェア／ジェスチャー）対応
 
 - **機能名・概要**: Android の「戻る」操作で、開いているモーダル（写真プレビュー・編集フォーム等）を閉じる／記録画面以外なら記録画面へ戻る。現状は画面遷移を `useState` で管理しており WebView の履歴が無いため、どの画面でも「戻る」でアプリが終了する。
-- **ステータス**: 未着手
+- **ステータス**: 進行中（コード実装済み・実機未確認）
 - **やり取りした内容の概要**:
   - 2026-11-07: Android 対応の続きで登録。`@capacitor/app` を追加して `App.addListener('backButton', ...)` で処理する案。同じプラグインで `appRestoredResult`（カメラ起動中に OS がアプリを終了した場合の写真の受け取り）にも対応できる。依存追加は iOS 側（`cap sync` / Pods）にも影響するため、着手時に要確認。
+  - 2026-11-07: 実装。`@capacitor/app@^7.1.2` を追加し、`npx cap sync` で Android / iOS の両方に反映（iOS は `Podfile` に `CapacitorApp` が入る。iOS では戻るイベントは発生しないので挙動は変わらない）。
+    - **仕組み** (`src/lib/backButton.ts`): モーダル側が `useBackHandler(開いているか, 閉じる処理)` で登録し、戻るが押されたら最後に登録されたもの（一番手前）を 1 つだけ閉じる。何も無ければ `App.tsx` 側で「記録画面以外 → 記録画面へ」、記録画面ならアプリを最小化（`minimizeApp`。終了ではなくバックグラウンドへ。Android 12 以降の標準の挙動に合わせた）。
+    - **対象**: 写真プレビュー・編集モーダル（履歴）、タグの編集／追加（タグ）、リリースノートのダイアログ。
+    - **対象外**: 日付のカレンダー（Radix Popover）とサジェストのドロップダウン。開いたまま戻ると、その下のモーダルが閉じる／画面が戻る。必要なら別途対応。
+    - **テスト**: `src/lib/backButton.test.ts`（10 件）と、`HistoryScreen.test.tsx` に写真プレビューを戻るで閉じるケースを追加。
+    - **動作確認（2026-11-07、エミュレータ API 37）**: 記録画面以外で戻る → 記録画面へ、記録画面で戻る → ホームへ（最小化）、タグ追加フォーム・写真プレビュー・編集モーダルを戻るで閉じる、をすべて確認。入力中はキーボードが開いていると最初の戻るでキーボードが閉じる（Android 標準の挙動）。
+    - **残タスク**: `appRestoredResult`（カメラ中にアプリが終了された場合の写真の受け取り）は未対応。
 
