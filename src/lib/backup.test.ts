@@ -57,4 +57,19 @@ describe('importData', () => {
     it('rejects a file without logs/tags', async () => {
         await expect(importData(makeBackupFile({ version: 1 }))).rejects.toThrow();
     });
+
+    it.each([
+        ['an object', [{}]],
+        ['a non-data-URL string', ['https://example.com/a.jpg']],
+        ['a non-array value', 'data:image/jpeg;base64,cGhvdG8='],
+    ])('rejects the whole import when photos contain %s', async (_label, photos) => {
+        await expect(importData(makeBackupFile({
+            version: 1,
+            timestamp: '2026-01-01T00:00:00.000Z',
+            logs: [{ id: 1, date: '2026-01-01', place: 'Place A', people: [], photos }],
+            tags: [],
+        }))).rejects.toThrow();
+
+        expect(await db.logs.count()).toBe(0);
+    });
 });

@@ -12,6 +12,20 @@ interface BackupData {
 const toBase64 = (image: Blob | string): Promise<string> =>
     typeof image === 'string' ? Promise.resolve(image) : blobToBase64(image);
 
+// バックアップ内の写真は data URL 文字列のみ受け付ける。
+// 不正な値（オブジェクト等）をそのまま保存すると表示時にクラッシュするため、
+// 1 つでも混ざっていれば復元全体を中止する（写真とサムネイルの順序ずれも防ぐ）。
+const isDataUrl = (value: unknown): value is string =>
+    typeof value === 'string' && value.startsWith('data:');
+
+const validateImages = (images: unknown): string[] => {
+    if (images === undefined || images === null) return [];
+    if (!Array.isArray(images) || !images.every(isDataUrl)) {
+        throw new Error('Invalid photo data in backup file');
+    }
+    return images;
+};
+
 export async function exportData(): Promise<void> {
     try {
         const logs = await db.logs.toArray();
@@ -90,8 +104,8 @@ export async function importData(file: File): Promise<void> {
         // saveLog / updateLog と同じく文字列で永続化する。表示側は Blob / string の両方に対応済み。
         const processedLogs: Log[] = backup.logs.map((log) => ({
             ...log,
-            photos: log.photos ?? [],
-            thumbnails: log.thumbnails ?? [],
+            photos: validateImages(log.photos),
+            thumbnails: validateImages(log.thumbnails),
         }));
 
         await db.transaction('rw', db.logs, db.tags, async () => {
