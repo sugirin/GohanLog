@@ -62,3 +62,93 @@
     - **再表示動線**: 今回スコープ外（必要になればチケットを別に切る）。
     - **リリースノート本文の管理**: `src/lib/releaseNotes.ts` の `releaseNotes` 配列に version / ja / en で追記する形。1.0.0 はリリースノート機能導入前の初期版なのでエントリ無し（既存ユーザーへの通知なし）。次バージョン以降の変更点はここに追記する。
     - **テスト**: `src/lib/releaseNotes.test.ts`（10件）と `src/components/ReleaseNotesDialog.test.tsx`（4件）を追加。判定ロジックの主要ケースとダイアログの基本表示を網羅。
+  - 2026-05-03: 1.1.0 リリース後、ダイアログが誰にも表示されない不具合を修正（1.1.1）。
+    - **原因**: `getPendingReleaseNote` が `lastSeenVersion === null` の場合に「サイレントに記録だけする」仕様だったため、機能導入バージョンである 1.1.0 では既存ユーザー（`lastSeenVersion` 未保存）全員に対して即座に suppression が発動し、誰の目にも触れなかった。
+    - **修正**: `lastSeenVersion === null` でも、`currentVersion` 用のリリースノートが登録されていれば返すように変更。フレッシュインストールでも該当ノートがあれば 1 度だけ表示する（情報を取り損なわないため）。`releaseNotes.test.ts` を 11 件に増やして「未保存ユーザーで currentVersion のノートあり」のケースを追加。
+    - **1.1.1 のリリースノート**: 1.1.0 の内容（タグからの履歴遷移／ダイアログ機能の導入）を再掲しつつ、「1.1.0 でこのダイアログが表示されない不具合を修正した」一文を追加。1.1.0 を見逃したユーザーも 1.1.1 起動時に変更点をまとめて読める。
+    - **iOS のバージョン更新と配信**: 別途 `MARKETING_VERSION` を 1.1.1 に揃え、`CURRENT_PROJECT_VERSION` をインクリメントしてリリースする予定（このアップデート分は `docs/RELEASE.md` の手順に従う）。
+  - 2026-11-07: 上記 2026-05-03 の「修正」はコミット前に取り消し、`lastSeenVersion === null` のときはサイレントに記録する元の仕様に戻した。
+    - **理由**: コードレビューで、1.0.x → 1.1.0 で更新したユーザーはその時点で `lastSeenVersion = '1.1.0'` が記録済みのため、null 分岐を消さなくても 1.1.1 に上げればダイアログが出ると判明。null 分岐の削除で実際に変わるのは新規インストールだけで、初回起動のユーザー（Android の初期ユーザー全員を含む）に「1.1.0 の不具合を修正」等の文脈の通じないノートが出てしまう。
+    - **1.1.1 のリリースノート**: 1.1.0 の内容の再掲のみとし、「1.1.0 でダイアログが表示されない不具合を修正」の一文は削除（コード上の修正が無くなったため）。
+    - **iOS のバージョン**: `MARKETING_VERSION 1.1.1` / `CURRENT_PROJECT_VERSION 3` に更新。
+    - **写真まわりの hotfix を同梱**: `hotfix/photo-persistence`（編集保存で写真が消える／復元写真が Blob で保存される／不正な写真データの復元拒否）を `feat/android-support` にマージし、1.1.1 のリリースノートに 2 項目追加。
+
+## 6. Android 対応
+
+- **機能名・概要**: Capacitor で Android アプリを追加し、iOS と同一コードから Android も配信できるようにする。
+- **ステータス**: 進行中
+- **やり取りした内容の概要**:
+  - 2026-07-02: Android 開発に着手。コード／プロジェクト側のセットアップを実施。
+    - `@capacitor/android@^7.6.2` を追加し、`npx cap add android` で `android/` を生成。`appId: com.sugirin.gohanlog`、`app_name: GohanLog`、`@capacitor/camera` の Gradle 配線済み。`android/app/build.gradle` は `versionName 1.1.1` / `versionCode 1`。
+    - SDK は `minSdk 23` / `compileSdk・targetSdk 35`（Capacitor 7 要件）。ビルドには **JDK 21・Android Studio Ladybug (2024.2.1) 以降**が必要。
+    - npm スクリプトに `cap:open:android` / `cap:run:android` を追加。
+    - **残タスク**: ユーザー側で Android Studio / JDK を導入 → 実機・エミュレータで動作確認。撮影・ギャラリー選択の実機検証。ネイティブ Base64 保存（`isNativePlatform()` 経路）が Android WebView でも正しく永続化されるか確認。**Google Play 配信（署名鍵 keystore・Play Console 登録・AAB 提出）は後回し**（`docs/RELEASE.md` にプレースホルダを記載）。
+
+  - 2026-11-07: Android 対応の続き（コード側）。
+    - **カメラ権限の見直し**: インストール済み `@capacitor/camera` 7.0.5 の README とマニフェストを確認した結果、Android では権限宣言が不要（撮影は `IMAGE_CAPTURE` Intent、ギャラリーは Photo Picker）。`saveToGallery` 未使用のため権限は追加しない。`CAMERA` を宣言すると逆に実行時許可が必要になるため宣言しない方針。`docs/SETUP_MOBILE.md` の誤記（「`CAMERA` / `READ_MEDIA_IMAGES` をマージする」）を修正。
+    - **Android 15 の edge-to-edge 対策**: `targetSdk 35` で Android 15 端末は edge-to-edge が強制され、画面上下がシステムバーに隠れる。`capacitor.config.ts` に `android.adjustMarginsForEdgeToEdge: 'auto'` を追加（Capacitor 7.1+ のオプション。Android 15 時のみマージン付与。iOS には影響なし）。
+    - **写真まわりの hotfix**: `hotfix/photo-persistence`（編集保存で写真が消える／復元で Blob 保存）の修正は Android にも同じく必要。`main` へマージ後、このブランチに取り込む。
+    - **未対応（要判断）**: Android の戻るボタン（下記 10）、カメラ起動中にアプリが OS に終了された場合の写真の取りこぼし（`appRestoredResult`）。どちらも `@capacitor/app` の追加が必要。
+    - **残タスク（変わらず）**: Android Studio / JDK 21 の導入 → エミュレータ（API 35 / Android 15 推奨）と実機で、撮影・ギャラリー選択・Base64 永続化・画面上下の余白を確認。
+  - 2026-11-07: Android Studio（2026.2）を導入。同梱の JDK は 25 で、`android/` の Gradle 8.11.1（Capacitor 7 の既定）は JDK 25 では動かない（`Unsupported class file major version 69`）。JDK 21 を別途入れ、Android Studio の Gradle JDK に指定する必要がある。SDK は API 37 のみ導入済み（`compileSdk 35` の分はビルド時に自動ダウンロードされる想定）。エミュレータ `Medium_Phone_API_37.0` は作成済み。
+  - 2026-11-07: JDK 21（Temurin 21.0.13）を導入し、`assembleDebug` が成功。エミュレータ（API 37 / Android 17）で動作確認した。
+    - **OK**: 起動・画面表示、画面上下がシステムバーに隠れない（edge-to-edge 対策が効いている）、ギャラリーからの写真選択（Photo Picker。権限ダイアログなし）、保存、**アプリを強制終了→再起動しても写真付きの記録が残る**（Base64 保存が Android WebView で機能）、写真プレビュー・編集モーダル。
+    - **未確認**: カメラ撮影（実機で確認する）、Android 15（API 35）での余白（確認したのは API 37）。
+    - **見つかった問題**:
+      - ステータスバーのアイコン（時計・電池）が白で、明るい背景の上でほぼ見えない。`styles.xml` のテーマで明るい背景用の黒アイコン（`windowLightStatusBar`）にする必要がある。
+      - アプリアイコンと起動画面が Capacitor の初期画像のまま。`npx @capacitor/assets generate --android` で `assets/icon.png` / `splash.png` から作る。
+      - 履歴の編集モーダルの下部（キャンセル・更新ボタン）がボトムナビに一部隠れる。ナビとモーダルが同じ `z-50` で、DOM で後にあるナビが上に来るため。iOS でも同じ CSS なので共通の問題の可能性あり。
+      - 履歴の検索欄のプレースホルダ `Search place or people...` が英語ベタ書き（i18n 漏れ）。
+    - **エミュレータの注意**: コマンドラインから起動するとソフトウェア描画（SwiftShader）になり、システムアプリの「応答なし」が頻発する。`emulator -avd <名前> -gpu host` で起動するか、Android Studio の Device Manager から起動する。
+    - **上記 4 件を修正（同日）**、エミュレータで確認済み:
+      - ステータスバー: `styles.xml` の `AppTheme.NoActionBar` を `Theme.AppCompat.Light.NoActionBar` に固定し、`windowLightStatusBar` / `windowLightNavigationBar` で黒アイコンに。余白部分の色は `colors.xml` の `app_background`（Web 側の背景色 #FFFCED）。
+      - アイコン・起動画面: `scripts/make-android-assets.mjs` で `assets/android/` に元画像を作り、`@capacitor/assets` で生成。手順は `docs/SETUP_MOBILE.md`。
+      - 編集モーダルとボトムナビの重なり: ナビを `z-40` に下げた（モーダルは `z-50`）。iOS でも同じ修正が効く。
+      - 検索欄のプレースホルダ: `history.searchPlaceholder` を ja / en に追加。
+
+## 7. Web 版（GitHub Pages / PWA）の廃止
+
+- **機能名・概要**: 旧 Web 版の公開を廃止し、ネイティブ（iOS / Android）専用構成へ寄せる。
+- **ステータス**: 進行中（コード上の撤去は完了。実際の Pages 非公開化は運用作業として別途）
+- **やり取りした内容の概要**:
+  - 2026-07-02: 「Android を優先し、Web 版は廃止してよい」という方針を確認。コード側の撤去を実施。
+    - `vite-plugin-pwa` と `gh-pages` を依存から削除。`vite` の `base` を `/GohanLog/` → `./` に変更。`deploy` / `predeploy` スクリプトを削除。
+    - Capacitor は同じ Web ビルドを土台にするため、React/Vite のコード自体は残す（「廃止」の対象はブラウザ向けの公開＝GitHub Pages / PWA のみ）。
+    - **留意点**: 既存の PWA 利用者は公開停止すると端末内 IndexedDB のデータにアクセスできなくなる。個人アプリのため許容だが、必要ならバックアップ（設定画面の JSON エクスポート）案内や事前アナウンスを検討。
+    - **残タスク**: 実際の GitHub Pages 非公開化（`gh-pages` ブランチ削除／リポジトリ Pages 設定 OFF）は手動。`public/pwa-192x192.png` / `pwa-512x512.png` など PWA 専用アセットは不要になったため整理可能（今回は未削除）。
+
+## 8. 写真の Base64 変換の共通化と保存形式の統一（リファクタ）
+
+- **機能名・概要**: 「Blob | string → Base64」の変換を `imageUtils.ts` の共通関数に集約し、写真の保存形式のルールを 1 つに揃える。あわせて画像プレビューの object URL リークを解消する。
+- **ステータス**: 未着手
+- **やり取りした内容の概要**:
+  - 2026-11-07: hotfix（`hotfix/photo-persistence`）のコードレビュー指摘から登録。hotfix とは切り離して後で対応する方針。
+    - **変換処理の重複**: `actions.ts` の `saveLog / updateLog` に `p instanceof Blob ? await blobToBase64(p) : p` が 4 箇所、`backup.ts` に `toBase64` がある。次に変換ロジックを直すとき（読めない Blob の扱い等）に修正漏れで写真消失バグが再発しうる。`toBase64(image)` / `normalizeImages(arr)` を `imageUtils.ts` に置いて全経路から使う。
+    - **保存形式の不統一**: 復元（`importData`）は常に Base64 文字列で保存する一方、`saveLog / updateLog` はネイティブ時のみ Base64 化する。ネイティブの実経路はどちらも文字列なので実害はないが、「常に Base64」か「ネイティブのみ」のどちらかに統一する。
+    - **object URL リーク**: `LogForm.tsx` のプレビューと `HistoryScreen.tsx` の `getImageSrc` が描画のたびに `URL.createObjectURL` を呼び、`revokeObjectURL` していない。memo 化してエフェクトのクリーンアップで解放する。軽微。
+
+## 9. バックアップ／復元の堅牢化
+
+- **機能名・概要**: エクスポートが一部の写真の読み込み失敗で全体失敗しないようにし、復元時の上書き・タグ不整合を解消する。
+- **ステータス**: 未着手
+- **やり取りした内容の概要**:
+  - 2026-11-07: hotfix（`hotfix/photo-persistence`）のコードレビュー指摘から登録。
+    - **エクスポートの全体失敗**: `exportData` は写真 1 枚でも読めない Blob があると `Promise.all` ごと失敗し、バックアップ全体が取れない。写真消失バグの被害ユーザーほどテキスト記録すら退避できなくなる。画像単位で catch してスキップ（または欠損として記録）する。
+    - **復元時の上書き**: `importData` は `bulkPut` でログを元 id のまま書き込むため、復元先に同じ id のログがあると黙って上書きされる。
+    - **タグの不整合**: タグも `bulkPut` で id 基準のまま入れるため、同じ `[type+name]` で別 id のタグが重複しうる。`count` / `lastUsed` も再計算されず、CLAUDE.md の整合性ルールから外れる。復元後にログからタグを再集計する、または `[type+name]` でマージする方式を検討。
+    - **関連（今回は対応しない）**: 過去の復元で Blob のまま保存された写真を Base64 に直す修復処理は、2026-11-07 に「省略」と判断済み。
+
+## 10. Android の戻るボタン（ハードウェア／ジェスチャー）対応
+
+- **機能名・概要**: Android の「戻る」操作で、開いているモーダル（写真プレビュー・編集フォーム等）を閉じる／記録画面以外なら記録画面へ戻る。現状は画面遷移を `useState` で管理しており WebView の履歴が無いため、どの画面でも「戻る」でアプリが終了する。
+- **ステータス**: 進行中（コード実装済み・実機未確認）
+- **やり取りした内容の概要**:
+  - 2026-11-07: Android 対応の続きで登録。`@capacitor/app` を追加して `App.addListener('backButton', ...)` で処理する案。同じプラグインで `appRestoredResult`（カメラ起動中に OS がアプリを終了した場合の写真の受け取り）にも対応できる。依存追加は iOS 側（`cap sync` / Pods）にも影響するため、着手時に要確認。
+  - 2026-11-07: 実装。`@capacitor/app@^7.1.2` を追加し、`npx cap sync` で Android / iOS の両方に反映（iOS は `Podfile` に `CapacitorApp` が入る。iOS では戻るイベントは発生しないので挙動は変わらない）。
+    - **仕組み** (`src/lib/backButton.ts`): モーダル側が `useBackHandler(開いているか, 閉じる処理)` で登録し、戻るが押されたら最後に登録されたもの（一番手前）を 1 つだけ閉じる。何も無ければ `App.tsx` 側で「記録画面以外 → 記録画面へ」、記録画面ならアプリを最小化（`minimizeApp`。終了ではなくバックグラウンドへ。Android 12 以降の標準の挙動に合わせた）。
+    - **対象**: 写真プレビュー・編集モーダル（履歴）、タグの編集／追加（タグ）、リリースノートのダイアログ。
+    - **対象外**: 日付のカレンダー（Radix Popover）とサジェストのドロップダウン。開いたまま戻ると、その下のモーダルが閉じる／画面が戻る。必要なら別途対応。
+    - **テスト**: `src/lib/backButton.test.ts`（10 件）と、`HistoryScreen.test.tsx` に写真プレビューを戻るで閉じるケースを追加。
+    - **動作確認（2026-11-07、エミュレータ API 37）**: 記録画面以外で戻る → 記録画面へ、記録画面で戻る → ホームへ（最小化）、タグ追加フォーム・写真プレビュー・編集モーダルを戻るで閉じる、をすべて確認。入力中はキーボードが開いていると最初の戻るでキーボードが閉じる（Android 標準の挙動）。
+    - **残タスク**: `appRestoredResult`（カメラ中にアプリが終了された場合の写真の受け取り）は未対応。
+

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Web 側の背景色（index.css の background: oklch(0.99 0.02 95)）に合わせた色。システムバー部分の余白に使う -->
+    <color name="app_background">#FFFCED</color>
+</resources>

@@ -2,43 +2,19 @@ import path from "path"
 import { readFileSync } from "fs"
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, './package.json'), 'utf-8')) as { version: string }
 
 // https://vite.dev/config/
+// ネイティブ（Capacitor iOS/Android）専用構成。相対パス base で配信する。
+// 旧 Web 版（GitHub Pages / PWA）は廃止したため base: '/GohanLog/' と vite-plugin-pwa は撤去済み。
 export default defineConfig({
-  base: '/GohanLog/',
+  base: './',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [
     react(),
-    VitePWA({
-      devOptions: {
-        enabled: true
-      },
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'GohanLog',
-        short_name: 'GohanLog',
-        description: 'Simple dining log app',
-        theme_color: '#ffffff',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
   ],
   resolve: {
     alias: {

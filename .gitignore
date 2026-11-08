@@ -30,3 +30,6 @@ ios/App/Podfile.lock
 android/app/build
 android/.gradle
 android/app/src/main/assets/public
+
+# Claude Code の作業用 worktree
+.claude/worktrees/

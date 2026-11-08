@@ -20,6 +20,27 @@ export interface ReleaseNote {
  */
 export const releaseNotes: ReleaseNote[] = [
     {
+        version: '1.1.1',
+        ja: {
+            title: 'GohanLog 1.1.1',
+            bullets: [
+                'タグ画面でタグのバッジをタップすると、そのタグで絞り込まれた履歴画面に移動できるようになりました。',
+                'アップデート後に変更点をお知らせするダイアログを追加しました（このダイアログがその第一弾です）。',
+                '記録を編集して保存すると、登録済みの写真が消えてしまう不具合を修正しました。',
+                'バックアップから復元した写真が、あとで表示されなくなることがある不具合を修正しました。',
+            ],
+        },
+        en: {
+            title: 'GohanLog 1.1.1',
+            bullets: [
+                'Tap a tag badge in the Tags screen to jump to History filtered by that tag.',
+                "Added an update dialog that shows what's new on first launch after an update (this is the first one!).",
+                'Fixed a bug where editing a record removed its existing photos.',
+                'Fixed a bug where photos restored from a backup could later stop displaying.',
+            ],
+        },
+    },
+    {
         version: '1.1.0',
         ja: {
             title: 'GohanLog 1.1.0',

@@ -60,6 +60,7 @@ export const translations = {
         history: {
             title: '履歴',
             noLogs: 'まだ記録がありません',
+            searchPlaceholder: 'お店や人の名前で検索...',
             deleteConfirm: 'この記録を削除しますか？',
             edit: '編集',
             delete: '削除',
@@ -146,6 +147,7 @@ export const translations = {
         history: {
             title: 'History',
             noLogs: 'No logs yet',
+            searchPlaceholder: 'Search place or people...',
             deleteConfirm: 'Delete this log?',
             edit: 'Edit',
             delete: 'Delete',

@@ -5,17 +5,17 @@
 ## プロジェクトの正体
 
 - **GohanLog** — 自分用のシンプルな食事記録アプリ。
-- **React 19 + TypeScript + Vite で作った PWA** を、**Capacitor 7 で iOS ネイティブアプリにラップ**する二段構え。
-- PWA は GitHub Pages で公開中（`https://sugirin.github.io/GohanLog/`、`base: '/GohanLog/'`）。
-- iOS は **App Store 配信中**（`appId: com.sugirin.gohanlog`）。Android は将来対応予定（`@capacitor/android` 未追加）。
+- **React 19 + TypeScript + Vite で作った Web アプリ**を、**Capacitor 7 で iOS / Android ネイティブアプリにラップ**する構成。
+- **旧 Web 版（GitHub Pages / PWA）は廃止**。ネイティブ専用構成に移行し、`vite` の `base` は `./`、`vite-plugin-pwa` は撤去済み（`npm run dev` のブラウザ表示は開発用途のみ）。
+- iOS は **App Store 配信中**（`appId: com.sugirin.gohanlog`）。Android は **開発着手（`android/` 追加済み・Capacitor 7）**。Google Play へは未配信。
 
 ## やってはいけないこと
 
-- ネイティブ書き換え（Swift / SwiftUI）を提案しない。確定済み。
-- 「App Store に提出しましょうか？」と聞かない。**もう配信中**。
-- ネイティブで Blob を IndexedDB に直接保存しない。`src/lib/actions.ts` の `saveLog/updateLog` は **ネイティブ時に Blob → Base64 変換してから保存**している（iOS WKWebView 対策）。壊さない。
-- Web/Native の分岐は `src/lib/platformUtils.ts` の `isNativePlatform()` を使う。
-- フォルダ名や URL の `base` を変えない（GitHub Pages のパスに依存）。
+- ネイティブ書き換え（Swift / SwiftUI / Kotlin）を提案しない。確定済み（Capacitor で iOS / Android を賄う）。
+- 「App Store に提出しましょうか？」と聞かない。iOS は**もう配信中**。
+- ネイティブで Blob を IndexedDB に直接保存しない。`src/lib/actions.ts` の `saveLog/updateLog` は **ネイティブ時に Blob → Base64 変換してから保存**している（iOS / Android WebView 対策）。壊さない。
+- Web/Native の分岐は `src/lib/platformUtils.ts` の `isNativePlatform()` を使う（iOS / Android 共通）。
+- `vite` の `base` は `./`（ネイティブ専用）。旧 Web 版は廃止済みなので `base: '/GohanLog/'` や `gh-pages` デプロイを復活させない。
 
 ## 主要ファイル
 
@@ -31,18 +31,19 @@
 ## よく使うコマンド
 
 ```bash
-npm run dev               # 開発サーバー
-npm run dev:host          # 同じ Wi-Fi の iPhone Safari から見るとき
-npm run build             # 本番ビルド（base = /GohanLog/）
-npm run build:mobile      # Capacitor 用ビルド（base = ./）
-npm run cap:sync          # dist を iOS プロジェクトへ反映
+npm run dev               # 開発サーバー（ブラウザ確認用）
+npm run dev:host          # 同じ Wi-Fi の実機ブラウザから見るとき
+npm run build             # ビルド（base = ./）
+npm run build:mobile      # Capacitor 用ビルド（base = ./、tsc 付き）
+npm run cap:sync          # dist を iOS / Android プロジェクトへ反映
 npm run cap:open:ios      # Xcode を開く
-npm run deploy            # GitHub Pages へ手動デプロイ
+npm run cap:open:android  # Android Studio を開く
+npm run cap:run:android   # Android を実機/エミュレータで実行
 npm run lint              # ESLint
 npx vitest                # テスト（vitest + Testing Library + fake-indexeddb + jsdom）
 ```
 
-iOS への反映は **`build:mobile` → `cap:sync` → Xcode で Run** が定型。
+ネイティブへの反映は **`build:mobile` → `cap:sync` → Xcode / Android Studio で Run** が定型。
 
 ## コードを変えるときの作法
 
@@ -66,8 +67,8 @@ iOS への反映は **`build:mobile` → `cap:sync` → Xcode で Run** が定�
 
 - `PROJECT_OVERVIEW.md` — プロジェクト全体像（機能・データモデル・技術スタック・経緯・設計上のポイント）
 - `docs/feature-backlog.md` — 機能アイデア・要望の集約
-- `docs/RELEASE.md` — PWA / iOS のリリース手順（バージョンの上げ方・タグ・リリースノート追記）
-- `docs/SETUP_MOBILE.md` — Capacitor / iOS ビルド手順
+- `docs/RELEASE.md` — iOS / Android のリリース手順（バージョンの上げ方・タグ・リリースノート追記）
+- `docs/SETUP_MOBILE.md` — Capacitor / iOS・Android ビルド手順（Android 開発環境の要件含む）
 - `docs/TROUBLESHOOTING_XCODE.md` — Xcode でハマったときの対処
 - `docs/WORKTREE.md` — Git worktree の運用方針（hotfix／リリース確認用に限定）
 - `docs/open-questions.md` — 進める前に確認したい未確定論点
